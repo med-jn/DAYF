@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">الضيف</string>
+    <string name="a11y_desc">يقرأ نصوص واجهة تيك توك فقط ليعرف هل أنت ضيف في البث وهل الميكروفون مفتوح. لا يضغط على شيء ولا يرسل شيئاً.</string>
+</resources>
