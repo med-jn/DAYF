@@ -21,7 +21,20 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
+      - name: Show errors (appears in the run Summary page)
+        if: failure()
+        run: |
+          {
+            echo '## أخطاء البناء'
+            echo '```'
+            grep -E '^e: |What went wrong|error:' -A2 build.log | head -80 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "=== ERRORS ==="
+          grep -E '^e: |What went wrong|error:' -A2 build.log | head -80 || true
       - uses: actions/upload-artifact@v4
         with:
           name: dayf-debug-apk

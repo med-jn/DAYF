@@ -90,11 +90,12 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
+        val act = intent?.action
+        if (act == ACTION_STOP) {
             shutdown()
             return START_NOT_STICKY
         }
-        if (intent?.action == ACTION_START) {
+        if (intent != null && act == ACTION_START) {
             if (running) return START_NOT_STICKY
             running = true
             diag = intent.getBooleanExtra(EXTRA_DIAG, false)
@@ -121,6 +122,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         return START_NOT_STICKY
     }
 
+    @Suppress("DEPRECATION")
     private fun notif(text: String): Notification {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (nm.getNotificationChannel(CH) == null) {
@@ -130,7 +132,6 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             this, 1, Intent(this, AgentService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE
         )
         val open = PendingIntent.getActivity(this, 2, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
-        @Suppress("DEPRECATION")
         return Notification.Builder(this, CH)
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setContentTitle("الضيف يعمل")
@@ -190,7 +191,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
             if (!diag) {
                 val p = AgentPlayer(this)
-                p.setGain(cfg?.outGain?.toFloat() ?: 1f)
+                p.applyGain(cfg?.outGain?.toFloat() ?: 1f)
                 route = p.start()
                 player = p
             }
@@ -316,7 +317,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         recent.addLast((if (role == "agent") "أنت: " else "الحاضرون: ") + text)
         while (recent.size > 40) recent.removeFirst()
         val s = supa ?: return
-        exec.execute { s.addTranscript(liveId, host, role, text) }
+        try {
+            exec.execute { s.addTranscript(liveId, host, role, text) }
+        } catch (e: Exception) {
+        }
     }
 
     override fun onToolCall(id: String, name: String, args: JSONObject) {
@@ -538,7 +542,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onVolume(delta: Float) {
         val p = player ?: return
-        p.setGain(p.gain + delta)
+        p.applyGain(p.gain + delta)
         lastNote = "مستوى الصوت: ${(p.gain * 100).toInt()}%"
     }
 

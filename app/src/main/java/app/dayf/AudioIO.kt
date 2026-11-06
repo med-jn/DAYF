@@ -38,11 +38,12 @@ class PlaybackCapture(
             r = build(cfg, 16000)
         }
         if (r == null) return "تعذّر إنشاء التقاط الصوت الداخلي"
-        rec = r
+        val rr: AudioRecord = r
+        rec = rr
         running = true
-        r.startRecording()
+        rr.startRecording()
         val f = factor
-        thread = Thread { loop(r, f) }.also { it.start() }
+        thread = Thread { loop(rr, f) }.also { it.start() }
         return null
     }
 
@@ -168,7 +169,7 @@ class AgentPlayer(private val ctx: Context) {
         q.offer(b)
     }
 
-    fun setGain(g: Float) {
+    fun applyGain(g: Float) {
         gain = g.coerceIn(0.05f, 1.0f)
         try {
             track?.setVolume(gain)
