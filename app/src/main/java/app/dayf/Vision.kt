@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object Vision {
     private val http = OkHttpClient.Builder().callTimeout(25, TimeUnit.SECONDS).build()
+    @Volatile var lastError = ""
 
     const val DEFAULT_PROMPT =
         "This is a phone screenshot. Decide whether it shows the TikTok app inside a LIVE broadcast and what role the account named \"{me}\" has in it. " +
@@ -39,13 +40,17 @@ object Vision {
                 .post(body.toString().toRequestBody("application/json".toMediaType()))
                 .build()
             http.newCall(req).execute().use { r ->
-                if (!r.isSuccessful) return null
+                if (!r.isSuccessful) {
+                    lastError = "HTTP ${r.code} ${r.body?.string()?.take(140)}"
+                    return null
+                }
                 val txt = JSONObject(r.body?.string() ?: return null)
                     .getJSONArray("candidates").getJSONObject(0)
                     .getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text")
                 JSONObject(txt.replace("```json", "").replace("```", "").trim())
             }
         } catch (e: Exception) {
+            lastError = e.message ?: "error"
             null
         }
     }

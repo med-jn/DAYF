@@ -8,4 +8,8 @@ object Prefs {
     fun put(c: Context, k: String, v: String) {
         sp(c).edit().putString(k, v).apply()
     }
+
+    fun putNow(c: Context, k: String, v: String) {
+        sp(c).edit().putString(k, v).commit()
+    }
 }

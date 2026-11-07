@@ -86,8 +86,14 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private var lastAnnG: GuestState? = null
     private var lastAnnM: MicState? = null
     private var introduced = false
+    private var lastVisionErrAt = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        AppLog.installCrashHandler(this)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val act = intent?.action
@@ -100,6 +106,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             running = true
             diag = intent.getBooleanExtra(EXTRA_DIAG, false)
             startForeground(NOTIF_ID, notif("جارٍ التشغيل…"), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            AppLog.add("بدء الخدمة" + (if (diag) " (وضع اختبار الالتقاط)" else ""))
+            if (Settings.canDrawOverlays(this)) {
+                startUi()
+            } else {
+                fail("صلاحية «الظهور فوق التطبيقات» غير ممنوحة")
+                return START_NOT_STICKY
+            }
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             wake = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "dayf:agent").also { it.acquire(6 * 60 * 60 * 1000L) }
             try {
@@ -143,9 +156,17 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     private fun fail(msg: String) {
+        AppLog.add("خطأ: $msg")
         main.post {
+            lastNote = msg
+            overlay?.setError(msg)
+            try {
+                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                nm.notify(NOTIF_ID, notif("خطأ: $msg"))
+            } catch (e: Exception) {
+            }
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-            shutdown()
+            main.postDelayed({ shutdown() }, 25000)
         }
     }
 
@@ -153,7 +174,6 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     private fun boot() {
         try {
-            if (!Settings.canDrawOverlays(this)) return fail("فعّل «الظهور فوق التطبيقات» من شاشة التطبيق الرئيسية.")
             var commands: List<String> = emptyList()
             if (!diag) {
                 gemKey = Prefs.get(this, "geminiKey")
@@ -186,8 +206,9 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                 TikTokWatcher.keywords = Keywords.from(c.keywords)
                 commands = c.quickCommands
                 s.startSession(liveId, host)
+                AppLog.add("Supabase ✔ الوكيل «${c.name}» | قواعد ${rules.size} | معرفة ${knowledge.size} | أسماء النداء ${names.size} | نموذج $model")
             }
-            main.post { startUi(commands) }
+            main.post { overlay?.setCommands(commands) }
 
             if (!diag) {
                 val p = AgentPlayer(this)
@@ -199,6 +220,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             val cap = PlaybackCapture(proj) { pcm -> onCapture(pcm) }
             val err = cap.start()
             if (err != null) lastNote = err
+            AppLog.add(err ?: "التقاط الصوت الداخلي يعمل")
             capture = cap
 
             if (!diag) {
@@ -211,12 +233,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                 main.postDelayed(visionTick, 4000)
             }
         } catch (e: Exception) {
-            fail("خطأ أثناء التشغيل: ${e.message}")
+            AppLog.add(e.stackTrace.take(6).joinToString("\n") { "   at $it" })
+            fail("خطأ أثناء التشغيل: ${e.javaClass.simpleName}: ${e.message}")
         }
     }
 
-    private fun startUi(commands: List<String>) {
-        val o = Overlay(this, this, commands)
+    private fun startUi() {
+        val o = Overlay(this, this)
         o.show()
         overlay = o
         StateBus.listeners.add(stateListener)
@@ -242,6 +265,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     override fun onSetupComplete() {
+        AppLog.add("Gemini Live جاهز")
         attempt = 0
         lastAnnG = null
         main.post { announce.run() }
@@ -375,6 +399,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     override fun onClosed(code: Int, reason: String) {
         if (stopping) return
         lastNote = "انقطع Gemini ($code) ${reason.take(80)}"
+        AppLog.add("انقطع Gemini Live ($code): ${reason.take(200)}")
         attempt++
         if (attempt > 10) {
             fail("تعذّر الاتصال بـ Gemini بعد عدة محاولات: $reason")
@@ -387,6 +412,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     // ---------------------------------------------------------------- state
 
     private val stateListener: () -> Unit = {
+        AppLog.add("الحالة: ${StateBus.guestEff} / مايك ${StateBus.micEff}")
         main.removeCallbacks(announce)
         main.postDelayed(announce, 1200)
         updateOverlay()
@@ -432,23 +458,37 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val hard = StateBus.hardBlock(now)
         val connected = diag || live?.ready == true
         val color = when {
-            !connected -> Color.GRAY
-            StateBus.speaking -> Color.parseColor("#1E88E5")
-            hard == null -> Color.parseColor("#2E7D32")
-            else -> Color.parseColor("#C62828")
+            !connected -> Ui.GRAY
+            StateBus.speaking -> Ui.BLUE
+            hard == null -> Ui.GREEN
+            else -> Ui.RED
         }
-        val bars = "▮".repeat((StateBus.captureLevel / 12).coerceIn(0, 8))
-        val gate = if (diag) "وضع الاختبار (بلا Gemini)" else if (hard == null) {
-            if (StateBus.mode == SpeakMode.ON_CALL && now > StateBus.addressedUntil && now > StateBus.forceUntil) "جاهز، ينتظر النداء" else "مسموح له بالكلام"
-        } else "ممنوع: $hard"
-        val txt = "الحالة: ${StateBus.guestEff.ar} | المايك: ${StateBus.micEff.ar}\n" +
-            "الوضع: ${StateBus.mode.ar} | البوابة: $gate\n" +
-            "التقاط الصوت: $bars ${StateBus.captureLevel}%\n" +
-            "Gemini: ${if (connected) "متصل" else "غير متصل"} | الإخراج: $route" +
+        val gate = when {
+            diag -> "وضع اختبار الالتقاط (بلا Gemini)"
+            !connected -> "جارٍ الاتصال بـ Gemini…"
+            hard != null -> "ممنوع من الكلام: $hard"
+            StateBus.mode == SpeakMode.ON_CALL && now > StateBus.addressedUntil && now > StateBus.forceUntil -> "جاهز، ينتظر أن يُنادى باسمه"
+            else -> "مسموح له بالكلام"
+        }
+        val modeIdx = when (StateBus.mode) {
+            SpeakMode.SILENT -> 0
+            SpeakMode.ON_CALL -> 1
+            SpeakMode.AUTO -> 2
+        }
+        val footer = "Gemini: ${if (connected) "متصل" else "غير متصل"} • الإخراج: $route" +
             (if (lastNote.isNotEmpty()) "\n$lastNote" else "")
-        val gl = "ضيف: " + (StateBus.manualGuest?.ar ?: "تلقائي")
-        val ml = "مايك: " + (StateBus.manualMic?.ar ?: "تلقائي")
-        o.update(txt, color, gl, ml)
+        o.update(
+            OverlayState(
+                color,
+                "${StateBus.guestEff.ar} • مايك ${StateBus.micEff.ar}",
+                gate,
+                modeIdx,
+                StateBus.captureLevel * 3,
+                footer,
+                "ضيف: " + (StateBus.manualGuest?.ar ?: "تلقائي"),
+                "مايك: " + (StateBus.manualMic?.ar ?: "تلقائي")
+            )
+        )
     }
 
     // ---------------------------------------------------------------- vision
@@ -474,7 +514,15 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val c = cfg ?: return
         val me = Prefs.get(this, "myName").ifBlank { "the user" }
         val prompt = c.visionPrompt.ifBlank { Vision.DEFAULT_PROMPT }.replace("{me}", me)
-        val j = Vision.classify(gemKey, c.visionModel, prompt, jpg) ?: return
+        val j = Vision.classify(gemKey, c.visionModel, prompt, jpg)
+        if (j == null) {
+            val t = System.currentTimeMillis()
+            if (t - lastVisionErrAt > 60000) {
+                lastVisionErrAt = t
+                AppLog.add("فشل تحليل الشاشة: ${Vision.lastError}")
+            }
+            return
+        }
         val g = when (j.optString("role")) {
             "viewer" -> GuestState.VIEWER
             "requested" -> GuestState.REQUESTED
@@ -556,6 +604,12 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("dump", sb.toString().take(30000)))
         Toast.makeText(this, "نُسخت بنية الشاشة. الصقها في المحادثة.", Toast.LENGTH_LONG).show()
+    }
+
+    override fun onCopyLog() {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("log", AppLog.text(this)))
+        Toast.makeText(this, "نُسخ السجل. الصقه في المحادثة.", Toast.LENGTH_LONG).show()
     }
 
     override fun onExit() {
