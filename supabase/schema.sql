@@ -1,4 +1,5 @@
 -- الصق هذا الملف كاملاً في Supabase → SQL Editor → Run
+-- ثم شغّل بعده migration_v3.sql (الأعمدة الجديدة + رمز الإدارة)
 
 create table if not exists agent_config (
   id int primary key default 1,
@@ -6,11 +7,11 @@ create table if not exists agent_config (
   aliases text default '',                       -- أسماء بديلة وتهجئات يلتقطها التفريغ الصوتي، مفصولة بفواصل
   voice text default 'Charon',
   model text,                                    -- فارغ = اختيار تلقائي لأفضل نموذج Live
-  vision_model text default 'gemini-2.5-flash',
+  vision_model text default '',                 -- فارغ = اختيار تلقائي
   dialect text default 'عربية بيضاء بسيطة',
   persona text default 'ضيف ودود وخفيف الظل، يتكلم قليلاً ويصغي كثيراً.',
   extra_instructions text default '',
-  opening_line text default 'أنا مساعد ذكاء اصطناعي، سعيد بوجودي معكم.',
+  opening_line text default '',
   unknown_reply text default 'ما عندي معلومة عن هذا الموضوع.',
   temperature double precision default 0.4,
   silence_ms int default 800,

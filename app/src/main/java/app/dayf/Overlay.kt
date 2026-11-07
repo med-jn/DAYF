@@ -38,6 +38,8 @@ class Overlay(private val ctx: Context, private val a: Actions) {
         fun onCommand(text: String)
         fun onVolume(delta: Float)
         fun onDump()
+        fun onVerify()
+        fun onShowScreen()
         fun onCopyLog()
         fun onExit()
     }
@@ -157,6 +159,12 @@ class Overlay(private val ctx: Context, private val a: Actions) {
         r1.addView(Ui.btn(ctx, "🔊", Ui.CARD2, sp = 14f, padV = 9) { a.onVolume(0.1f) }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, start = 4, end = 4))
         r1.addView(Ui.btn(ctx, "⏹ اسكت", Ui.RED, sp = 13f, padV = 9) { a.onStopSpeaking() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f, start = 4))
         panel.addView(r1, Ui.lp(ctx, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, top = 10))
+
+        val r3 = LinearLayout(ctx)
+        r3.orientation = LinearLayout.HORIZONTAL
+        r3.addView(Ui.btn(ctx, "🔄 تحقق من حالتي", Ui.CARD2, Ui.GOLD_L, sp = 12f, padV = 9) { a.onVerify() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, end = 4))
+        r3.addView(Ui.btn(ctx, "👁 أرِه الشاشة", Ui.CARD2, Ui.GOLD_L, sp = 12f, padV = 9) { a.onShowScreen() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, start = 4))
+        panel.addView(r3, Ui.lp(ctx, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, top = 8))
 
         val r2 = LinearLayout(ctx)
         r2.orientation = LinearLayout.HORIZONTAL

@@ -23,7 +23,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
@@ -43,6 +42,9 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private var projection: MediaProjection? = null
     private var capture: PlaybackCapture? = null
     private var player: AgentPlayer? = null
+    private var voice: VoiceOut? = null
+    private var visionModel = ""
+    private var visionFallbackTried = false
     private var grabber: ScreenGrabber? = null
     private var overlay: Overlay? = null
     private var live: LiveClient? = null
@@ -79,9 +81,8 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private var lastFlush = 0L
 
     // vision hysteresis
-    private val visionBusy = AtomicBoolean(false)
-    private var visPrevG: GuestState? = null
-    private var visPrevM: MicState? = null
+    @Volatile private var lastVerifyAt = 0L
+    private val verifyLock = Any()
 
     private var lastAnnG: GuestState? = null
     private var lastAnnM: MicState? = null
@@ -196,6 +197,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                 prevLines = s.recentTranscripts(host, 20)
                 names = (listOf(c.name) + c.aliases.split(',', '،', '\n')).map { Ar.norm(it) }.filter { it.isNotBlank() }
                 model = c.model.ifBlank { LiveClient.pickModel(gemKey) ?: "" }
+                visionModel = c.visionModel.ifBlank { LiveClient.pickTextModel(gemKey) ?: "" }
                 if (model.isBlank()) return fail("لم أجد نموذج Live متاحاً لمفتاحك.")
                 StateBus.mode = try {
                     SpeakMode.valueOf(c.defaultMode)
@@ -215,6 +217,15 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                 p.applyGain(cfg?.outGain?.toFloat() ?: 1f)
                 route = p.start()
                 player = p
+                val v = VoiceOut(p)
+                v.onError = { m ->
+                    AppLog.add(m)
+                    lastNote = m
+                }
+                v.configure(cfg!!, Prefs.get(this, "elevenKey"))
+                v.start()
+                voice = v
+                AppLog.add("مزوّد الصوت: ${if (v.provider == "elevenlabs") "ElevenLabs" else "Gemini (${cfg!!.voice})"}")
             }
             val proj = projection ?: return
             val cap = PlaybackCapture(proj) { pcm -> onCapture(pcm) }
@@ -224,13 +235,11 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             capture = cap
 
             if (!diag) {
-                val g = ScreenGrabber(this, proj, (cfg?.frameIntervalMs ?: 2000).toLong()) { jpg ->
-                    if (StateBus.shouldListen()) live?.sendVideo(jpg)
-                }
+                val g = ScreenGrabber(this, proj)
                 g.start()
                 grabber = g
                 connectLive()
-                main.postDelayed(visionTick, 4000)
+                if (cfg?.screenMode == "periodic") main.postDelayed(periodicTick, 5000)
             }
         } catch (e: Exception) {
             AppLog.add(e.stackTrace.take(6).joinToString("\n") { "   at $it" })
@@ -266,13 +275,18 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onSetupComplete() {
         AppLog.add("Gemini Live جاهز")
+        if (cfg?.screenMode != "manual") exec.execute { verifyNow("بداية الجلسة", false) }
         attempt = 0
         lastAnnG = null
         main.post { announce.run() }
     }
 
-    override fun onAudio(pcm24k: ByteArray) {
-        val now = System.currentTimeMillis()
+    private fun decideTurn(now0: Long) {
+        var now = now0
+        if (!turnDecided && StateBus.mode != SpeakMode.SILENT && cfg?.screenMode == "on_demand" && !isFresh(now)) {
+            verifyNow("قبل الكلام", false)
+            now = System.currentTimeMillis()
+        }
         if (!turnDecided) {
             turnDecided = true
             val why = StateBus.canStartTurn(now)
@@ -283,13 +297,18 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             if (why != null) {
                 turnAllowed = false
                 StateBus.lastBlock = why
-                player?.flush()
+                voice?.cancel()
             }
         }
+    }
+
+    override fun onAudio(pcm24k: ByteArray) {
+        val now = System.currentTimeMillis()
+        decideTurn(now)
         if (turnAllowed) {
             spokenThisTurn = true
             lastAudioAt = now
-            player?.enqueue(pcm24k)
+            voice?.audio(pcm24k)
         }
     }
 
@@ -300,6 +319,9 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             if (Ar.mentions(tail, names)) {
                 val w = (cfg?.addressWindowS ?: 25) * 1000L
                 StateBus.addressedUntil = System.currentTimeMillis() + w
+                if (cfg?.screenMode == "on_demand" && !isFresh(System.currentTimeMillis())) {
+                    exec.execute { verifyNow("نداء", false) }
+                }
             }
             if (inBuf.length > 800) flushLocked()
         }
@@ -307,9 +329,18 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onOutputText(t: String) {
         synchronized(textLock) { outBuf.append(t) }
+        val v = voice
+        if (v != null && v.provider == "elevenlabs") {
+            decideTurn(System.currentTimeMillis())
+            if (turnAllowed) {
+                spokenThisTurn = true
+                v.text(t)
+            }
+        }
     }
 
     override fun onTurnComplete() {
+        if (turnAllowed) voice?.endTurn()
         if (turnAllowed && spokenThisTurn) {
             val f = (cfg?.followupWindowS ?: 20) * 1000L
             StateBus.addressedUntil = maxOf(StateBus.addressedUntil, System.currentTimeMillis() + f)
@@ -321,7 +352,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     override fun onInterrupted() {
-        player?.flush()
+        voice?.cancel()
         turnDecided = false
         turnAllowed = false
         spokenThisTurn = false
@@ -349,41 +380,9 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onToolCall(id: String, name: String, args: JSONObject) {
         Thread {
-            val res = JSONObject()
-            val s = supa
-            val c = cfg
-            try {
-                if (s == null || c == null) {
-                    res.put("error", "no database")
-                } else when (name) {
-                    "lookup_knowledge" -> {
-                        val rows = s.search(args.optString("query"))
-                        if (rows.isEmpty()) {
-                            res.put("found", false).put("message", c.unknownReply)
-                        } else {
-                            val arr = JSONArray()
-                            rows.forEach { arr.put(JSONObject().put("topic", it.first).put("content", it.second)) }
-                            res.put("found", true).put("items", arr)
-                        }
-                    }
-                    "remember_person" -> {
-                        res.put("saved", s.addNote(host, args.optString("person"), args.optString("note")))
-                    }
-                    "recall_person" -> {
-                        val rows = s.notes(host, args.optString("person"), 15)
-                        val arr = JSONArray()
-                        rows.forEach { arr.put(it.second) }
-                        res.put("notes", arr)
-                    }
-                    "report_unknown" -> {
-                        s.addUnanswered(host, args.optString("question"))
-                        res.put("saved", true)
-                    }
-                    else -> res.put("error", "unknown tool")
-                }
-            } catch (e: Exception) {
-                res.put("error", e.message ?: "error")
-            }
+            val res = if (name == "look_at_screen") {
+                lookAtScreen(args.optString("reason"))
+            } else Tools.exec(supa, cfg, host, name, args)
             live?.sendToolResponse(id, name, res)
         }.start()
     }
@@ -427,8 +426,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val text = when {
             g == GuestState.GUEST && !introduced && m != MicState.MUTED -> {
                 introduced = true
-                StateBus.forceUntil = System.currentTimeMillis() + 25000
-                "[حالة النظام] قُبلت ضيفاً في البث والمايك مفتوح. عرّف بنفسك الآن بجملة قصيرة وفق قاعدة الإفصاح ثم اصمت."
+                if (cfg?.greetOnJoin == true) {
+                    StateBus.forceUntil = System.currentTimeMillis() + 25000
+                    "[حالة النظام] قُبلت ضيفاً في البث والمايك مفتوح. حيِّ الحاضرين بجملة قصيرة طبيعية جداً ثم اصمت."
+                } else "[حالة النظام] قُبلت ضيفاً في البث والمايك مفتوح."
             }
             g == GuestState.GUEST && m == MicState.MUTED -> "[حالة النظام] أنت ضيف لكن المايك مغلق: لا أحد يسمعك. لا تتكلم."
             g == GuestState.GUEST -> "[حالة النظام] أنت ضيف في البث والمايك مفتوح."
@@ -445,7 +446,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         override fun run() {
             if (stopping) return
             val now = System.currentTimeMillis()
-            StateBus.speaking = now - lastAudioAt < 700
+            StateBus.speaking = now - maxOf(lastAudioAt, player?.lastEnqueueAt ?: 0L) < 700
             updateOverlay()
             if (now - lastFlush > 15000) synchronized(textLock) { flushLocked() }
             main.postDelayed(this, 700)
@@ -493,70 +494,94 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     // ---------------------------------------------------------------- vision
 
-    private val visionTick = object : Runnable {
+    private val periodicTick = object : Runnable {
         override fun run() {
             if (stopping) return
-            val jpg = grabber?.latest
-            if (jpg != null && visionBusy.compareAndSet(false, true)) {
-                exec.execute {
-                    try {
-                        runVision(jpg)
-                    } finally {
-                        visionBusy.set(false)
-                    }
-                }
-            }
-            main.postDelayed(this, (cfg?.visionIntervalS ?: 6) * 1000L)
+            if (StateBus.shouldListen()) grabber?.grab()?.let { live?.sendVideo(it) }
+            main.postDelayed(this, (cfg?.frameIntervalMs ?: 3000).toLong())
         }
     }
 
-    private fun runVision(jpg: ByteArray) {
-        val c = cfg ?: return
-        val me = Prefs.get(this, "myName").ifBlank { "the user" }
-        val prompt = c.visionPrompt.ifBlank { Vision.DEFAULT_PROMPT }.replace("{me}", me)
-        val j = Vision.classify(gemKey, c.visionModel, prompt, jpg)
-        if (j == null) {
-            val t = System.currentTimeMillis()
-            if (t - lastVisionErrAt > 60000) {
-                lastVisionErrAt = t
-                AppLog.add("فشل تحليل الشاشة: ${Vision.lastError}")
+    private fun isFresh(now: Long): Boolean {
+        if (StateBus.manualGuest != null) return true
+        if (StateBus.a11yGuest != GuestState.UNKNOWN) return true
+        val ttl = (cfg?.verifyTtlS ?: 60) * 1000L
+        return now - lastVerifyAt < ttl
+    }
+
+    /** One screenshot -> one classification. Called only when the state matters. Blocking. */
+    private fun verifyNow(reason: String, force: Boolean): Boolean {
+        synchronized(verifyLock) {
+            val c = cfg ?: return false
+            if (!force && isFresh(System.currentTimeMillis())) return true
+            val jpg = grabber?.grab()
+            if (jpg == null) {
+                AppLog.add("تحقق ($reason): لا توجد لقطة بعد")
+                return false
             }
-            return
-        }
-        val g = when (j.optString("role")) {
-            "viewer" -> GuestState.VIEWER
-            "requested" -> GuestState.REQUESTED
-            "invited" -> GuestState.INVITED
-            "guest" -> GuestState.GUEST
-            "not_live" -> GuestState.NOT_LIVE
-            else -> GuestState.UNKNOWN
-        }
-        val m = when (j.optString("my_mic")) {
-            "open" -> MicState.OPEN
-            "muted" -> MicState.MUTED
-            else -> MicState.UNKNOWN
-        }
-        lastNote = "الرؤية: " + j.optString("evidence")
-        if (g == visPrevG && m == visPrevM) {
+            val me = Prefs.get(this, "myName").ifBlank { "the user" }
+            val prompt = c.visionPrompt.ifBlank { Vision.DEFAULT_PROMPT }.replace("{me}", me)
+            if (visionModel.isBlank()) visionModel = LiveClient.pickTextModel(gemKey) ?: ""
+            var j = Vision.classify(gemKey, visionModel, prompt, jpg)
+            if (j == null && !visionFallbackTried && Vision.lastError.contains("404")) {
+                visionFallbackTried = true
+                val m = LiveClient.pickTextModel(gemKey)
+                if (m != null && m != visionModel) {
+                    AppLog.add("نموذج الرؤية $visionModel غير متاح، التحويل تلقائياً إلى $m")
+                    visionModel = m
+                    j = Vision.classify(gemKey, visionModel, prompt, jpg)
+                }
+            }
+            if (j == null) {
+                AppLog.add("فشل تحليل الشاشة: ${Vision.lastError}")
+                return false
+            }
+            val g = when (j.optString("role")) {
+                "viewer" -> GuestState.VIEWER
+                "requested" -> GuestState.REQUESTED
+                "invited" -> GuestState.INVITED
+                "guest" -> GuestState.GUEST
+                "not_live" -> GuestState.NOT_LIVE
+                else -> GuestState.UNKNOWN
+            }
+            val m = when (j.optString("my_mic")) {
+                "open" -> MicState.OPEN
+                "muted" -> MicState.MUTED
+                else -> MicState.UNKNOWN
+            }
+            lastNote = "الرؤية: " + j.optString("evidence")
+            AppLog.add("تحقق ($reason): ${g.ar} / مايك ${m.ar} — ${j.optString("evidence")}")
             StateBus.visGuest = g
             StateBus.visMic = m
+            if (g != GuestState.UNKNOWN) lastVerifyAt = System.currentTimeMillis()
             StateBus.recompute()
+            return g != GuestState.UNKNOWN
         }
-        visPrevG = g
-        visPrevM = m
+    }
+
+    private fun lookAtScreen(reason: String): JSONObject {
+        val r = JSONObject()
+        if (cfg?.screenMode == "manual") {
+            return r.put("shown", false).put("note", "عرض الشاشة تلقائياً متوقف. اطلب من صاحب الحساب أن يضغط «أرِه الشاشة».")
+        }
+        val jpg = grabber?.grab()
+        if (jpg == null) return r.put("shown", false).put("note", "لا توجد لقطة متاحة الآن")
+        live?.sendVideo(jpg)
+        AppLog.add("لقطة بطلب الوكيل" + (if (reason.isNotBlank()) ": $reason" else ""))
+        return r.put("shown", true).put("note", "أُرسلت لقطة الشاشة الحالية الآن، انظر إليها ثم أجب.")
     }
 
     // ---------------------------------------------------------------- panel actions
 
     override fun onStopSpeaking() {
-        player?.flush()
+        voice?.cancel()
         StateBus.silenceUntil = System.currentTimeMillis() + 30000
         turnAllowed = false
     }
 
     override fun onMode(m: SpeakMode) {
         StateBus.mode = m
-        if (m == SpeakMode.SILENT) player?.flush()
+        if (m == SpeakMode.SILENT) voice?.cancel()
         updateOverlay()
     }
 
@@ -606,6 +631,23 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         Toast.makeText(this, "نُسخت بنية الشاشة. الصقها في المحادثة.", Toast.LENGTH_LONG).show()
     }
 
+    override fun onVerify() {
+        lastNote = "جارٍ التحقق من حالتك…"
+        exec.execute { verifyNow("يدوي", true) }
+    }
+
+    override fun onShowScreen() {
+        exec.execute {
+            val jpg = grabber?.grab()
+            if (jpg != null) {
+                live?.sendVideo(jpg)
+                live?.sendText("[حالة النظام] أُرسلت إليك لقطة للشاشة بطلب من صاحب الحساب. انظر إليها عند الحاجة، ولا تتكلم إلا إن طُلب منك.")
+                lastNote = "أُرسلت لقطة للوكيل"
+                AppLog.add("لقطة يدوية أُرسلت للوكيل")
+            } else lastNote = "لا توجد لقطة متاحة"
+        }
+    }
+
     override fun onCopyLog() {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("log", AppLog.text(this)))
@@ -627,6 +669,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         try { live?.close() } catch (e: Exception) { }
         try { capture?.stop() } catch (e: Exception) { }
         try { grabber?.stop() } catch (e: Exception) { }
+        try { voice?.stop() } catch (e: Exception) { }
         try { player?.stop() } catch (e: Exception) { }
         try { projection?.stop() } catch (e: Exception) { }
         try { overlay?.hide() } catch (e: Exception) { }

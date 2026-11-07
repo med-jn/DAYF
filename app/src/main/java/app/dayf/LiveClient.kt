@@ -44,6 +44,42 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
                 (if (Regex("live|native-audio").containsMatchIn(n)) 1 else 0)
         }
 
+        /** Best cheap text/vision model (flash family) that supports generateContent. */
+        fun pickTextModel(apiKey: String): String? {
+            var token = ""
+            val found = ArrayList<String>()
+            for (page in 0 until 4) {
+                var url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=100"
+                if (token.isNotEmpty()) url += "&pageToken=$token"
+                val req = Request.Builder().url(url).header("x-goog-api-key", apiKey).build()
+                val body = try {
+                    rest.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
+                } catch (e: Exception) {
+                    null
+                } ?: return null
+                val j = JSONObject(body)
+                val arr = j.optJSONArray("models") ?: break
+                for (i in 0 until arr.length()) {
+                    val m = arr.getJSONObject(i)
+                    val methods = m.optJSONArray("supportedGenerationMethods") ?: continue
+                    var ok = false
+                    for (k in 0 until methods.length()) if (methods.optString(k) == "generateContent") ok = true
+                    if (!ok) continue
+                    val name = m.optString("name").removePrefix("models/")
+                    if (!name.startsWith("gemini")) continue
+                    if (Regex("live|native-audio|tts|image|embed|thinking|robotics|computer|audio|exp").containsMatchIn(name)) continue
+                    found.add(name)
+                }
+                token = j.optString("nextPageToken", "")
+                if (token.isEmpty()) break
+            }
+            return found.maxByOrNull { n ->
+                val m = Regex("(\\d+)(?:\\.(\\d+))?").find(n)
+                val v = if (m != null) (m.groupValues[1] + "." + m.groupValues[2].ifEmpty { "0" }).toDouble() else 0.0
+                v * 10 + (if (n.contains("flash")) 5 else 0) - (if (n.contains("lite")) 2 else 0) - (if (n.contains("preview")) 1 else 0)
+            }
+        }
+
         /** Returns the best model supporting bidiGenerateContent, or null. */
         fun pickModel(apiKey: String): String? {
             var token = ""

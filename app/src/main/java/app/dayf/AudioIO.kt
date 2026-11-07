@@ -115,14 +115,15 @@ class AgentPlayer(private val ctx: Context) {
     @Volatile private var running = false
     private var thread: Thread? = null
     @Volatile var gain = 1.0f
+    @Volatile var lastEnqueueAt = 0L
 
-    fun start(): String {
+    fun start(preferWired: Boolean = true, voiceComm: Boolean = false): String {
         val rate = 24000
         val min = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val t = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setUsage(if (voiceComm) AudioAttributes.USAGE_VOICE_COMMUNICATION else AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
@@ -142,7 +143,7 @@ class AgentPlayer(private val ctx: Context) {
                 it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
                 it.type == AudioDeviceInfo.TYPE_USB_HEADSET
         }
-        if (wired != null) t.setPreferredDevice(wired)
+        if (wired != null && preferWired) t.setPreferredDevice(wired)
         t.setVolume(gain)
         t.play()
         track = t
@@ -165,7 +166,16 @@ class AgentPlayer(private val ctx: Context) {
         }
     }
 
+    fun hasWired(): Boolean {
+        val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        return am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any {
+            it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET || it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                it.type == AudioDeviceInfo.TYPE_USB_HEADSET
+        }
+    }
+
     fun enqueue(b: ByteArray) {
+        lastEnqueueAt = System.currentTimeMillis()
         q.offer(b)
     }
 

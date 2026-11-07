@@ -8,64 +8,57 @@ import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import java.io.ByteArrayOutputStream
 
-class ScreenGrabber(
-    private val ctx: Context,
-    private val projection: MediaProjection,
-    private val intervalMs: Long,
-    private val onFrame: (ByteArray) -> Unit
-) {
+/**
+ * Keeps a cheap virtual display alive, but only encodes a frame when grab() is called.
+ * No frame is produced, sent or paid for unless something asks for it.
+ */
+class ScreenGrabber(private val ctx: Context, private val projection: MediaProjection) {
     private var vd: VirtualDisplay? = null
     private var reader: ImageReader? = null
-    private val ht = HandlerThread("dayf-grab")
+    private var w = 0
+    private var h = 0
     @Volatile var latest: ByteArray? = null
-    private var last = 0L
+        private set
 
     @Suppress("DEPRECATION")
     fun start() {
         val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val dm = DisplayMetrics()
         wm.defaultDisplay.getRealMetrics(dm)
-        val w = minOf(dm.widthPixels, 720)
-        val h = (dm.heightPixels.toLong() * w / dm.widthPixels).toInt()
-        ht.start()
-        val handler = Handler(ht.looper)
+        w = minOf(dm.widthPixels, 720)
+        h = (dm.heightPixels.toLong() * w / dm.widthPixels).toInt()
         val rd = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 2)
         reader = rd
         vd = projection.createVirtualDisplay(
             "dayf", w, h, dm.densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, rd.surface, null, handler
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, rd.surface, null, null
         )
-        rd.setOnImageAvailableListener({ r ->
-            val img = try {
-                r.acquireLatestImage()
-            } catch (e: Exception) {
-                null
-            }
-            if (img != null) {
-                try {
-                    val now = System.currentTimeMillis()
-                    if (now - last >= intervalMs) {
-                        last = now
-                        val jpg = toJpeg(img, w, h)
-                        if (jpg != null) {
-                            latest = jpg
-                            onFrame(jpg)
-                        }
-                    }
-                } finally {
-                    img.close()
-                }
-            }
-        }, handler)
     }
 
-    private fun toJpeg(img: Image, w: Int, h: Int): ByteArray? {
+    /** Returns a JPEG of the current screen (or the last one if the screen has not changed). */
+    @Synchronized
+    fun grab(): ByteArray? {
+        val img = try {
+            reader?.acquireLatestImage()
+        } catch (e: Exception) {
+            null
+        }
+        if (img != null) {
+            try {
+                val j = toJpeg(img)
+                if (j != null) latest = j
+            } finally {
+                img.close()
+            }
+        }
+        return latest
+    }
+
+    private fun toJpeg(img: Image): ByteArray? {
         return try {
             val p = img.planes[0]
             val bmp = Bitmap.createBitmap(p.rowStride / p.pixelStride, h, Bitmap.Config.ARGB_8888)
@@ -90,6 +83,5 @@ class ScreenGrabber(
             reader?.close()
         } catch (e: Exception) {
         }
-        ht.quitSafely()
     }
 }
