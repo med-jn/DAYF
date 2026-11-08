@@ -27,4 +27,13 @@ object Ar {
         }
         return false
     }
+
+    private val stops = listOf(
+        "اسكت", "اسكتي", "وقف", "وقفي", "كفى", "بس", "خلاص", "لحظة", "استنى", "استني", "اصبر", "ثانية", "stop", "wait"
+    ).map { norm(it) }
+
+    fun hasStopWord(text: String): Boolean {
+        val t = " " + norm(text) + " "
+        return stops.any { t.contains(" $it ") }
+    }
 }

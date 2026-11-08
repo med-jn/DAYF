@@ -116,6 +116,7 @@ class AgentPlayer(private val ctx: Context) {
     private var thread: Thread? = null
     @Volatile var gain = 1.0f
     @Volatile var lastEnqueueAt = 0L
+    @Volatile private var duckOn = false
 
     fun start(preferWired: Boolean = true, voiceComm: Boolean = false): String {
         val rate = 24000
@@ -182,7 +183,16 @@ class AgentPlayer(private val ctx: Context) {
     fun applyGain(g: Float) {
         gain = g.coerceIn(0.05f, 1.0f)
         try {
-            track?.setVolume(gain)
+            track?.setVolume(if (duckOn) gain * 0.35f else gain)
+        } catch (e: Exception) {
+        }
+    }
+
+    /** Lower the voice (like a person easing off) while others talk over it. */
+    fun duck(on: Boolean) {
+        duckOn = on
+        try {
+            track?.setVolume(if (on) gain * 0.35f else gain)
         } catch (e: Exception) {
         }
     }

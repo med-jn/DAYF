@@ -82,6 +82,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     // vision hysteresis
     @Volatile private var lastVerifyAt = 0L
+    private val yieldHits = java.util.ArrayDeque<Pair<Long, Int>>()
+    private var inputSinceDecision = 0
+    private var extrasOn = false
+    private var extrasFailed = false
+    private var setupDone = false
+    private var duckUntil = 0L
+    private var ducked = false
     private val verifyLock = Any()
 
     private var lastAnnG: GuestState? = null
@@ -264,7 +271,12 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val sys = Prompt.system(c, rules, knowledge, people, recap)
         val client = LiveClient(gemKey, this)
         live = client
-        client.connect(Prompt.setup(model, c, sys, resumeHandle))
+        setupDone = false
+        extrasOn = c.proactiveAudio && !extrasFailed
+        client.connect(
+            Prompt.setup(model, c, sys, resumeHandle, extrasOn, c.interruptPolicy == "always"),
+            extrasOn
+        )
     }
 
     private fun onCapture(pcm: ByteArray) {
@@ -274,7 +286,8 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     override fun onSetupComplete() {
-        AppLog.add("Gemini Live جاهز")
+        setupDone = true
+        AppLog.add("Gemini Live جاهز" + (if (extrasOn) " • الصمت الذكي مفعّل" else " • بدون الصمت الذكي"))
         if (cfg?.screenMode != "manual") exec.execute { verifyNow("بداية الجلسة", false) }
         attempt = 0
         lastAnnG = null
@@ -289,11 +302,14 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         }
         if (!turnDecided) {
             turnDecided = true
-            val why = StateBus.canStartTurn(now)
+            var why = StateBus.canStartTurn(now)
+            val heard = inputSinceDecision
+            inputSinceDecision = 0
+            if (why == null && heard < 3 && now > StateBus.forceUntil) why = "لا كلام مفهوم (ضجيج أو موسيقى)"
             turnAllowed = why == null
             if (why != null) StateBus.lastBlock = why
         } else if (turnAllowed) {
-            val why = StateBus.hardBlock(now)
+            val why = StateBus.hardBlock(now, true)
             if (why != null) {
                 turnAllowed = false
                 StateBus.lastBlock = why
@@ -312,7 +328,39 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         }
     }
 
+    private fun updateDuck(now: Long) {
+        val want = now < duckUntil && StateBus.speaking
+        if (want != ducked) {
+            ducked = want
+            player?.duck(want)
+        }
+    }
+
+    /** A human eases off when someone really takes the floor, but not for every sound. */
+    private fun maybeYield(t: String) {
+        val c = cfg ?: return
+        if (c.interruptPolicy != "smart" || !StateBus.speaking) return
+        val now = System.currentTimeMillis()
+        duckUntil = now + 1200
+        updateDuck(now)
+        yieldHits.addLast(now to t.length)
+        while (yieldHits.isNotEmpty() && now - yieldHits.peekFirst()!!.first > c.yieldWindowMs) yieldHits.removeFirst()
+        val total = yieldHits.sumOf { it.second }
+        val stop = now < StateBus.addressedUntil && Ar.hasStopWord(t)
+        val called = Ar.mentions(t, names) && total >= 12
+        if (total >= c.yieldChars || stop || called) {
+            yieldHits.clear()
+            AppLog.add("تنازل عن الكلام: " + (if (stop) "طُلب منه التوقف" else if (called) "نودي باسمه" else "أحدهم أخذ الكلام"))
+            voice?.cancel()
+            turnAllowed = false
+            duckUntil = 0
+            updateDuck(now)
+        }
+    }
+
     override fun onInputText(t: String) {
+        inputSinceDecision += t.length
+        maybeYield(t)
         synchronized(textLock) {
             inBuf.append(t)
             val tail = inBuf.takeLast(80).toString()
@@ -352,6 +400,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     override fun onInterrupted() {
+        if (cfg?.interruptPolicy != "always") return
         voice?.cancel()
         turnDecided = false
         turnAllowed = false
@@ -397,6 +446,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onClosed(code: Int, reason: String) {
         if (stopping) return
+        if (!setupDone && extrasOn && code != -1) {
+            extrasFailed = true
+            resumeHandle = null
+            AppLog.add("الصمت الذكي غير مدعوم في هذا النموذج ($code): ${reason.take(140)} — إعادة الاتصال بدونه")
+            main.postDelayed({ connectLive() }, 300)
+            return
+        }
         lastNote = "انقطع Gemini ($code) ${reason.take(80)}"
         AppLog.add("انقطع Gemini Live ($code): ${reason.take(200)}")
         attempt++
@@ -447,6 +503,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             if (stopping) return
             val now = System.currentTimeMillis()
             StateBus.speaking = now - maxOf(lastAudioAt, player?.lastEnqueueAt ?: 0L) < 700
+            updateDuck(now)
             updateOverlay()
             if (now - lastFlush > 15000) synchronized(textLock) { flushLocked() }
             main.postDelayed(this, 700)

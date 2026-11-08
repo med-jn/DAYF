@@ -17,7 +17,7 @@ object Repo {
         val u = Prefs.get(c, "supaUrl")
         val k = Prefs.get(c, "supaKey")
         if (u.isBlank() || k.isBlank()) return null
-        return Supa(u, k, Prefs.get(c, "adminKey"))
+        return Supa(u, k, Prefs.admin(c))
     }
 
     fun cfg(): Cfg = Cfg(raw)

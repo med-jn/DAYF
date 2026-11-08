@@ -161,7 +161,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
                 val sys = Prompt.system(c, rules, knowledge, people, emptyList())
                 val client = LiveClient(key, this)
                 live = client
-                client.connect(Prompt.setup(model, c, sys, null))
+                client.connect(Prompt.setup(model, c, sys, null, false, !halfDuplex))
             } catch (e: Exception) {
                 fail("خطأ: ${e.message}")
             }

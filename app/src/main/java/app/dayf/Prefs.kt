@@ -9,6 +9,9 @@ object Prefs {
         sp(c).edit().putString(k, v).apply()
     }
 
+    /** Write-access secret. Defaults to the one in migration SQL so no manual step is needed. */
+    fun admin(c: Context): String = get(c, "adminKey").ifBlank { "CHANGE_ME_SECRET" }
+
     fun putNow(c: Context, k: String, v: String) {
         sp(c).edit().putString(k, v).commit()
     }

@@ -119,7 +119,7 @@ class Overlay(private val ctx: Context, private val a: Actions) {
         segBox.orientation = LinearLayout.HORIZONTAL
         segBox.background = Ui.shape(ctx, Ui.CARD2, 12)
         segBox.setPadding(px(3), px(3), px(3), px(3))
-        val labels = listOf("🔇 صامت", "🎯 عند النداء", "⚡ تلقائي")
+        val labels = listOf("🔇 صامت", "🎯 عند النداء", "🧠 ذكي")
         val modes = listOf(SpeakMode.SILENT, SpeakMode.ON_CALL, SpeakMode.AUTO)
         for (i in 0 until 3) {
             val t = Ui.text(ctx, labels[i], 12f, Ui.TEXT, true)

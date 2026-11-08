@@ -39,6 +39,9 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
     private lateinit var ttl: StepperRow
     private lateinit var frame: StepperRow
     private lateinit var temp: StepperRow
+    private lateinit var intSeg: Segmented
+    private lateinit var yieldS: StepperRow
+    private lateinit var proactive: Toggle
     private var filled = false
 
     init {
@@ -81,7 +84,7 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
         field(k, "geminiKey", "مفتاح Gemini API", true)
         field(k, "supaUrl", "رابط Supabase", false)
         field(k, "supaKey", "مفتاح Supabase العام (anon / publishable)", true)
-        field(k, "adminKey", "رمز الإدارة (للتعديل من التطبيق، يطابق ما وضعته في migration_v3.sql)", true)
+        field(k, "adminKey", "رمز الإدارة (اختياري: اتركه فارغاً إن لم تغيّر الكلمة في ملف SQL)", true)
         field(k, "host", "اسم المضيف الحالي (لفصل ذاكرة كل بث)", false, false)
         field(k, "myName", "اسم حسابك الظاهر في تيك توك (ليعرفك في الشاشة)", false, false)
         val row = LinearLayout(act)
@@ -132,7 +135,7 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
         val a = Ui.panel(act)
         a.addView(Ui.sectionHead(act, "متى يتكلم"))
         a.put(Ui.label(act, "الوضع الافتراضي عند التشغيل"), top = 10)
-        modeSeg = Segmented(act, listOf("صامت", "عند النداء", "تلقائي"), 1) {}
+        modeSeg = Segmented(act, listOf("صامت", "عند النداء", "ذكي"), 1) {}
         a.put(modeSeg.view, top = 4)
         addr = StepperRow(act, "نافذة النداء", 25.0, 5.0, 90.0, 5.0, 0, " ث")
         follow = StepperRow(act, "نافذة المتابعة بعد كلامه", 20.0, 5.0, 90.0, 5.0, 0, " ث")
@@ -168,6 +171,30 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
         )
         boxBehave.put(s, top = 14)
 
+        val m = Ui.panel(act)
+        m.addView(Ui.sectionHead(act, "المقاطعة وإدارة الحوار"))
+        m.put(Ui.text(act, "كيف يتصرف حين يتكلم الناس فوقه", 12f, Ui.MUTED), top = 6)
+        intSeg = Segmented(act, listOf("لا يتوقف", "ذكي", "يتوقف فوراً"), 1) {}
+        m.put(intSeg.view, top = 10)
+        yieldS = StepperRow(act, "حساسية التنازل (عدد الحروف)", 30.0, 10.0, 80.0, 5.0, 0)
+        m.put(yieldS.view, top = 14)
+        val pr = LinearLayout(act)
+        pr.orientation = LinearLayout.HORIZONTAL
+        pr.gravity = Gravity.CENTER_VERTICAL
+        val pt = LinearLayout(act)
+        pt.orientation = LinearLayout.VERTICAL
+        pt.addView(Ui.text(act, "الصمت الذكي", 14f, Ui.TEXT))
+        pt.addView(Ui.text(act, "النموذج نفسه يقرر متى يسكت ولا يرد على ما لا يخصه", 11f, Ui.MUTED))
+        pr.addView(pt, LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
+        proactive = Toggle(act, true) {}
+        pr.addView(proactive)
+        m.put(pr, top = 14)
+        m.put(
+            Ui.text(act, "«ذكي»: لا تقطعه ضجة ولا كلمة عابرة، ويتنازل حين يأخذ أحدهم الكلام فعلاً أو يقول له اسكت. «لا يتوقف»: يكمل دائماً. «يتوقف فوراً»: أي صوت يقطعه (للتجربة بسماعة فقط).", 11f, Ui.MUTED),
+            top = 10
+        )
+        boxBehave.put(m, top = 14)
+
         val t = Ui.panel(act)
         t.addView(Ui.sectionHead(act, "الأسلوب"))
         temp = StepperRow(act, "الحرارة (أقل = أكثر التزاماً)", 0.4, 0.1, 1.0, 0.1, 1)
@@ -190,6 +217,9 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
             .put("verify_ttl_s", ttl.value.toInt())
             .put("frame_interval_ms", frame.value.toInt())
             .put("temperature", temp.value)
+            .put("interrupt_policy", listOf("never", "smart", "always")[intSeg.index])
+            .put("yield_chars", yieldS.value.toInt())
+            .put("proactive_audio", proactive.on)
         Repo.save(act, patch) { ok, msg -> act.toast(if (ok) "تم حفظ السلوك" else msg) }
     }
 
@@ -247,6 +277,10 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
         temp = replaceStepper(temp, StepperRow(act, "الحرارة (أقل = أكثر التزاماً)", c.temperature, 0.1, 1.0, 0.1, 1))
         allowUnknown.on = c.allowUnknown
         allowUnknown.invalidate()
+        intSeg.select(when (c.interruptPolicy) { "never" -> 0; "always" -> 2; else -> 1 }, false)
+        yieldS = replaceStepper(yieldS, StepperRow(act, "حساسية التنازل (عدد الحروف)", c.yieldChars.toDouble(), 10.0, 80.0, 5.0, 0))
+        proactive.on = c.proactiveAudio
+        proactive.invalidate()
         screenSeg.select(when (c.screenMode) { "periodic" -> 1; "manual" -> 2; else -> 0 }, false)
     }
 
@@ -282,7 +316,7 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
             val sk = Prefs.get(act, "supaKey")
             var cfg = Cfg(JSONObject())
             if (su.isNotBlank() && sk.isNotBlank()) {
-                val s = Supa(su, sk, Prefs.get(act, "adminKey"))
+                val s = Supa(su, sk, Prefs.admin(act))
                 val c = s.config()
                 if (c != null) {
                     cfg = Cfg(c)
@@ -295,7 +329,13 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
                 else {
                     Repo.liveModel = m
                     sb.append("✔ نموذج Live: $m\n")
-                    sb.append(liveProbe(gk, m, cfg))
+                    val r1 = probe(gk, m, cfg, true)
+                    if (r1.first) sb.append("✔ جلسة Gemini Live تعمل مع «الصمت الذكي»\n")
+                    else {
+                        val r2 = probe(gk, m, cfg, false)
+                        if (r2.first) sb.append("✔ جلسة تعمل، لكن «الصمت الذكي» غير مدعوم في هذا النموذج (سيعمل بدونه)\n")
+                        else sb.append(r2.second)
+                    }
                     val vm = cfg.visionModel.ifBlank { LiveClient.pickTextModel(gk) ?: "" }
                     sb.append("• نموذج الرؤية: ${if (vm.isBlank()) "غير متاح" else vm}\n")
                 }
@@ -307,12 +347,13 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
         }.start()
     }
 
-    private fun liveProbe(key: String, model: String, cfg: Cfg): String {
+    private fun probe(key: String, model: String, cfg: Cfg, extras: Boolean): Pair<Boolean, String> {
         val latch = CountDownLatch(1)
-        var out = "✘ Gemini Live: انتهت المهلة بلا رد\n"
+        var ok = false
+        var msg = "✘ Gemini Live: انتهت المهلة بلا رد\n"
         val client = LiveClient(key, object : LiveClient.Listener {
             override fun onSetupComplete() {
-                out = "✔ جلسة Gemini Live تعمل\n"
+                ok = true
                 latch.countDown()
             }
             override fun onAudio(pcm24k: ByteArray) {}
@@ -325,14 +366,14 @@ class SettingsScreen(act: MainActivity) : Screen(act) {
             override fun onGoAway() {}
             override fun onClosed(code: Int, reason: String) {
                 if (latch.count > 0) {
-                    out = "✘ Gemini Live أُغلقت ($code): ${reason.take(180)}\n"
+                    msg = "✘ Gemini Live أُغلقت ($code): ${reason.take(180)}\n"
                     latch.countDown()
                 }
             }
         })
-        client.connect(Prompt.setup(model, cfg, "اختبار", null))
+        client.connect(Prompt.setup(model, cfg, "اختبار", null, extras, false), extras)
         latch.await(12, TimeUnit.SECONDS)
         client.close()
-        return out
+        return ok to msg
     }
 }

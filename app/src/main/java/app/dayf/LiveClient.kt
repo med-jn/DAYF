@@ -29,6 +29,8 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
     companion object {
         private const val URL =
             "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
+        private const val URL_ALPHA =
+            "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
         private val http = OkHttpClient.Builder()
             .pingInterval(20, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -116,8 +118,8 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
     @Volatile private var closed = false
     private var ws: WebSocket? = null
 
-    fun connect(setup: JSONObject) {
-        val req = Request.Builder().url("$URL?key=$apiKey").build()
+    fun connect(setup: JSONObject, alpha: Boolean = false) {
+        val req = Request.Builder().url("${if (alpha) URL_ALPHA else URL}?key=$apiKey").build()
         ws = http.newWebSocket(req, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 webSocket.send(JSONObject().put("setup", setup).toString())

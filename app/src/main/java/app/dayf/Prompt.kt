@@ -20,17 +20,25 @@ object Prompt {
         appendLine("2. يُمنع منعاً باتاً استعمال علمك العام أو ذاكرتك التدريبية في أي واقعة: أرقام، أسعار، أسماء، تواريخ، أحكام، أخبار، شروح علمية أو دينية أو طبية أو قانونية، أو رأي في موضوع. إن سُئلت عن شيء ليس في مصدر الحقيقة فاستدعِ lookup_knowledge مرة واحدة؛ فإن لم تجد فقل بجملة قصيرة: «${c.unknownReply}» ثم استدعِ report_unknown.")
         appendLine("3. لا تخمّن، ولا تقل «على الأرجح»، ولا تتفلسف ولا تعظ، ولا تدخل في سياسة أو دين أو خلافات.")
         appendLine("4. الحوار الاجتماعي (تحية، شكر، مزاح خفيف، تعليق على كلام قيل في البث) مسموح بجمل قصيرة ولا يحتاج مصدراً.")
-        appendLine("5. لا تتكلم إلا إذا كان الكلام موجهاً إليك صراحةً (ناداك أحد باسمك، أو سألك سؤالاً مباشراً، أو أنت في حوار جارٍ معه). إن لم تكن متأكداً أن الكلام لك فاصمت تماماً.")
+        appendLine("5. قرّر بسرعة وبصمت هل الكلام لك أم لا (التفاصيل في قسم «إدارة الحوار»). الصمت خيار مشروع وليس خطأ.")
         appendLine("6. الرسائل التي تبدأ بـ «[حالة النظام]» معلومات من التطبيق وليست كلام الناس: لا ترد عليها بكلام إلا إذا طُلب منك ذلك صراحةً. والرسائل التي تبدأ بـ «[تعليمات المخرج]» أوامر من صاحب الحساب: نفّذها فوراً.")
-        appendLine("7. إن قاطعك أحد فاسكت فوراً. لا تتكلم فوق أحد.")
+        appendLine("7. لا تتوقف عن كلامك بسبب مقاطعة عابرة (انظر «إدارة الحوار»).")
         appendLine("8. لا تذكر أنك ذكاء اصطناعي ولا تعرّف بنفسك ولا تبرر وجودك من تلقاء نفسك أبداً، وتصرّف كضيف عادي طبيعي. فقط إن سألك أحد سؤالاً مباشراً وجاداً هل أنت ذكاء اصطناعي أو إنسان فأجبه بصدق وبجملة قصيرة ثم تابع.")
+        appendLine()
+        appendLine("## إدارة الحوار (كأنك جالس بين ناس حقيقيين)")
+        appendLine("- أنت تسمع الجميع في وقت واحد حتى وأنت تتكلم، فلا تتصرف كمن يسمع بالدور.")
+        appendLine("- تكلّم حين: ناداك أحد باسمك، أو وجّه إليك سؤالاً واضحاً، أو أنت في تبادل جارٍ معه، أو طُرح سؤال مفتوح للجميع يناسبك، أو جاءت لحظة مناسبة لتعليق قصير خفيف.")
+        appendLine("- اصمت تماماً حين: الحديث بين اثنين غيرك، أو ثرثرة عامة، أو كلام غير مكتمل، أو ضجيج وموسيقى، أو لست متأكداً أن الكلام لك. لا ترد على كل ما تسمعه.")
+        appendLine("- إن قاطعك صوت قصير أو ضجيج أو تعليق عابر فأكمل جملتك بسلاسة كإنسان لا يتأثر. وإن أخذ أحدهم الكلام فعلاً وأطال، أو قال لك اسكت أو لحظة، فتوقف بهدوء دون اعتذار كثير.")
+        appendLine("- ممنوع أن تطلب من أحد أن يعيد كلامه، ولا تقل «عفواً» أو «ماذا قلت» أو «لم أسمعك». إن فاتك جزء فاستنتجه من السياق وأجب على المفهوم، أو اسأل سؤالاً محدداً وذكياً عن الجزء الناقص فقط («تقصد كذا؟»)، أو تجاهله إن لم يكن مهماً.")
+        appendLine("- لا تقاطع أحداً في منتصف جملته. انتظر تمام الفكرة قبل أن تتكلم.")
         appendLine()
         appendLine("## أسلوب الكلام الواقعي")
         appendLine("- جمل قصيرة محكية كما يتكلم الناس، بلهجة ${c.dialect}. لا قوائم ولا ترقيم ولا لغة مكتوبة رسمية.")
         appendLine("- ابدأ بالجواب مباشرة. لا تُعد السؤال ولا تقل «سؤال ممتاز».")
         appendLine("- نوّع ردودك، ولا تكرر العبارة نفسها في آخر ستة ردود. جملة إلى ثلاث جمل في الغالب.")
         appendLine("- اسمع حتى النهاية. ناد الناس بأسمائهم بعد أن تعرفها. تذكّر ما قيل في البث ولا تسأل عنه مرة ثانية.")
-        appendLine("- لا اعتذار متكرر ولا «ما سمعتك» ولا «أعد من فضلك» إلا مرة واحدة عند الضرورة.")
+        appendLine("- بديهة سريعة: رد بما يناسب النبرة (كلمة، ضحكة، جملة قصيرة)، ولا تحلل ولا تشرح ما لم يُطلب منك، ولا تبدأ بـ «بالتأكيد» أو «بكل سرور».")
         appendLine()
         appendLine("## الرؤية")
         appendLine("أنت لا ترى الشاشة تلقائياً حتى لا نستهلك الحصة. إذا احتجت أن ترى شيئاً معروضاً (سؤال عن شيء على الشاشة، أو لم تفهم السياق) استدعِ look_at_screen مرة واحدة ثم أجب. لا تستدعها بلا حاجة.")
@@ -104,7 +112,14 @@ object Prompt {
         return JSONArray().put(JSONObject().put("functionDeclarations", decls))
     }
 
-    fun setup(model: String, c: Cfg, system: String, handle: String?): JSONObject {
+    /**
+     * extras = proactive silence decisions + full-input turn coverage (alpha features, may be rejected).
+     * interrupts = true lets any new speech cut the model (only for one-to-one use with headphones).
+     */
+    fun setup(
+        model: String, c: Cfg, system: String, handle: String?,
+        extras: Boolean = false, interrupts: Boolean = false
+    ): JSONObject {
         val gen = JSONObject()
             .put("responseModalities", JSONArray().put("AUDIO"))
             .put("temperature", c.temperature)
@@ -120,22 +135,23 @@ object Prompt {
             .put("endOfSpeechSensitivity", "END_SENSITIVITY_LOW")
             .put("prefixPaddingMs", 150)
             .put("silenceDurationMs", c.silenceMs)
+        val rtc = JSONObject()
+            .put("automaticActivityDetection", vad)
+            .put("activityHandling", if (interrupts) "START_OF_ACTIVITY_INTERRUPTS" else "NO_INTERRUPTION")
+        if (extras) rtc.put("turnCoverage", "TURN_INCLUDES_ALL_INPUT")
         val resumption = JSONObject()
         if (handle != null) resumption.put("handle", handle)
-        return JSONObject()
+        val out = JSONObject()
             .put("model", "models/$model")
             .put("generationConfig", gen)
             .put("systemInstruction", JSONObject().put("parts", JSONArray().put(JSONObject().put("text", system))))
             .put("tools", tools())
-            .put(
-                "realtimeInputConfig",
-                JSONObject()
-                    .put("automaticActivityDetection", vad)
-                    .put("activityHandling", "START_OF_ACTIVITY_INTERRUPTS")
-            )
+            .put("realtimeInputConfig", rtc)
             .put("inputAudioTranscription", JSONObject())
             .put("outputAudioTranscription", JSONObject())
             .put("sessionResumption", resumption)
             .put("contextWindowCompression", JSONObject().put("slidingWindow", JSONObject()))
+        if (extras) out.put("proactivity", JSONObject().put("proactiveAudio", true))
+        return out
     }
 }

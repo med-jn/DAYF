@@ -36,9 +36,7 @@ class BrainScreen(act: MainActivity) : Screen(act) {
     }
 
     override fun onShow() {
-        notice.text = if (Prefs.get(act, "adminKey").isBlank())
-            "للتعديل من هنا أدخل «رمز الإدارة» في الإعدادات وشغّل migration_v3.sql في Supabase. القراءة تعمل بدونه."
-        else ""
+        notice.text = ""
         reload()
     }
 

@@ -48,6 +48,10 @@ class Cfg(val j: JSONObject) {
     val elevenSimilarity: Double get() = j.dblOr("eleven_similarity", 0.8)
     val greetOnJoin: Boolean get() = j.boolOr("greet_on_join", true)
     val screenMode: String get() = j.strOr("screen_mode", "on_demand")
+    val interruptPolicy: String get() = j.strOr("interrupt_policy", "smart")
+    val yieldChars: Int get() = j.intOr("yield_chars", 30)
+    val yieldWindowMs: Int get() = j.intOr("yield_window_ms", 3000)
+    val proactiveAudio: Boolean get() = j.boolOr("proactive_audio", true)
     val verifyTtlS: Int get() = j.intOr("verify_ttl_s", 60)
     val quickCommands: List<String>
         get() {

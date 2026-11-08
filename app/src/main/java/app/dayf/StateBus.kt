@@ -69,14 +69,17 @@ object StateBus {
         }
     }
 
-    /** null = allowed to speak right now (hard conditions only). */
-    fun hardBlock(now: Long): String? {
+    /** null = allowed to speak right now. mid=true while a sentence is in progress: transient unknowns never cut it. */
+    fun hardBlock(now: Long, mid: Boolean = false): String? {
         if (mode == SpeakMode.SILENT) return "وضع الصمت"
         if (now < silenceUntil) return "صمت مؤقت"
         val g = guestEff
-        if (g != GuestState.GUEST && !(g == GuestState.UNKNOWN && allowUnknown)) return "لست ضيفاً (${g.ar})"
+        if (g == GuestState.REMOVED || g == GuestState.VIEWER || g == GuestState.NOT_LIVE ||
+            g == GuestState.REQUESTED || g == GuestState.INVITED
+        ) return "لست ضيفاً (${g.ar})"
+        if (g == GuestState.UNKNOWN && !allowUnknown && !mid) return "لست ضيفاً (${g.ar})"
         if (micEff == MicState.MUTED) return "المايك مغلق"
-        if (micEff == MicState.UNKNOWN && !allowUnknown && manualGuest == null) return "حالة المايك مجهولة"
+        if (micEff == MicState.UNKNOWN && !allowUnknown && manualGuest == null && !mid) return "حالة المايك مجهولة"
         return null
     }
 
