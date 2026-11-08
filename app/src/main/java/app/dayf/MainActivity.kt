@@ -29,7 +29,7 @@ class MainActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         AppLog.installCrashHandler(this)
-        window.setBackgroundDrawable(ArabesqueBg(this))
+        window.setBackgroundDrawable(Ui.AppBg())
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Ui.BG
 

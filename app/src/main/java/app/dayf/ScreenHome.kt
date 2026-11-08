@@ -2,8 +2,8 @@ package app.dayf
 
 import android.view.Gravity
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import app.dayf.Ui.put
 
 class HomeScreen(act: MainActivity) : Screen(act) {
@@ -12,13 +12,12 @@ class HomeScreen(act: MainActivity) : Screen(act) {
 
     private val power = PowerButton(act)
     private val wave = WaveView(act)
-    private val status = Ui.text(act, "", 24f, Ui.TEXT, false, true)
+    private val status = Ui.text(act, "", 22f, Ui.TEXT, true)
     private val hint = Ui.text(act, "", 13f, Ui.MUTED)
     private val pill = Ui.chip(act, "متوقف", Ui.GRAY)
-    private val idName = Ui.text(act, "", 26f, Ui.TEXT, false, true)
+    private val idName = Ui.text(act, "", 22f, Ui.TEXT, true)
     private val idMeta = Ui.text(act, "", 13f, Ui.MUTED)
-    private val idVoice = Ui.text(act, "", 13f, Ui.MUTED)
-    private val readyBox = LinearLayout(act)
+    private val ready = Collapsible(act, "الجاهزية", "", false)
     private val lastLog = Ui.text(act, "", 11f, Ui.MUTED)
 
     init {
@@ -29,59 +28,46 @@ class HomeScreen(act: MainActivity) : Screen(act) {
         val head = LinearLayout(act)
         head.orientation = LinearLayout.HORIZONTAL
         head.gravity = Gravity.CENTER_VERTICAL
-        head.addView(KhatamView(act, Ui.GOLD, true), LinearLayout.LayoutParams(dp(50), dp(50)))
+        val logo = ImageView(act)
+        logo.setImageBitmap(Ui.logo(act, "mark"))
+        logo.scaleType = ImageView.ScaleType.FIT_CENTER
+        head.addView(logo, LinearLayout.LayoutParams(dp(34), dp(46)))
         val ttl = LinearLayout(act)
         ttl.orientation = LinearLayout.VERTICAL
-        val mark = Ui.text(act, "الضيف", 38f, Ui.GOLD_L)
-        mark.typeface = Ui.fCalli(act)
-        ttl.addView(mark)
-        ttl.addView(Ui.text(act, "حضورٌ بصوتٍ يشبهك", 12f, Ui.MUTED))
-        head.addView(ttl, Ui.lp(act, 0, Ui.WRAP, 1f, start = 12))
+        ttl.addView(GlitchText(act, "Tik Guest", 26f, Gravity.START), LinearLayout.LayoutParams(dp(190), Ui.WRAP))
+        head.addView(ttl, Ui.lp(act, 0, Ui.WRAP, 1f, start = 8))
         head.addView(pill)
         col.put(head)
-        col.put(Ornament(act), top = 10, h = dp(16))
 
-        // hero
         val hero = LinearLayout(act)
         hero.orientation = LinearLayout.VERTICAL
         hero.gravity = Gravity.CENTER_HORIZONTAL
         power.setOnClickListener {
             if (AgentService.running) act.stopAgent() else act.begin(false)
         }
-        hero.addView(power, LinearLayout.LayoutParams(dp(210), dp(210)))
+        hero.addView(power, LinearLayout.LayoutParams(dp(200), dp(200)))
         status.gravity = Gravity.CENTER
         hint.gravity = Gravity.CENTER
-        hero.addView(status, Ui.lp(act, Ui.WRAP, Ui.WRAP, top = 8))
+        hero.addView(status, Ui.lp(act, Ui.WRAP, Ui.WRAP, top = 6))
         hero.addView(hint, Ui.lp(act, Ui.WRAP, Ui.WRAP, top = 4))
-        hero.addView(wave, Ui.lp(act, Ui.MATCH, dp(54), top = 14))
-        col.put(hero, top = 8)
+        hero.addView(wave, Ui.lp(act, Ui.MATCH, dp(48), top = 14))
+        col.put(hero, top = 18)
 
-        // identity
         val id = Ui.panel(act)
-        val idHead = LinearLayout(act)
-        idHead.orientation = LinearLayout.HORIZONTAL
-        idHead.gravity = Gravity.CENTER_VERTICAL
-        idHead.addView(Ui.sectionHead(act, "هوية الضيف"), Ui.lp(act, 0, Ui.WRAP, 1f))
-        idHead.addView(Ui.ghostBtn(act, "تعديل", Ui.GOLD_L, 12f, 6) { act.go(1) })
-        id.addView(idHead)
-        id.put(idName, top = 10)
-        id.put(idMeta, top = 4)
-        id.put(idVoice, top = 2)
-        col.put(id, top = 18)
+        val idRow = LinearLayout(act)
+        idRow.orientation = LinearLayout.HORIZONTAL
+        idRow.gravity = Gravity.CENTER_VERTICAL
+        val idCol = LinearLayout(act)
+        idCol.orientation = LinearLayout.VERTICAL
+        idCol.addView(idName)
+        idCol.addView(idMeta)
+        idRow.addView(idCol, LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
+        idRow.addView(Ui.ghostBtn(act, "تعديل", Ui.CYAN, 12f, 7) { act.go(1) })
+        id.addView(idRow)
+        col.put(id, top = 20)
 
-        // readiness
-        val ready = Ui.panel(act)
-        ready.addView(Ui.sectionHead(act, "الجاهزية"))
-        readyBox.orientation = LinearLayout.VERTICAL
-        ready.put(readyBox, top = 6)
-        col.put(ready, top = 14)
-
-        // quick actions
-        val qa = LinearLayout(act)
-        qa.orientation = LinearLayout.HORIZONTAL
-        qa.addView(Ui.ghostBtn(act, "🎧  اختبار الالتقاط", Ui.GOLD_L, 13f, 12) { act.begin(true) }, Ui.lp(act, 0, Ui.WRAP, 1f, end = 6))
-        qa.addView(Ui.ghostBtn(act, "🎙  استوديو المحادثة", Ui.GOLD_L, 13f, 12) { act.openStudio() }, Ui.lp(act, 0, Ui.WRAP, 1f, start = 6))
-        col.put(qa, top = 14)
+        col.put(ready, top = 12)
+        col.put(Ui.ghostBtn(act, "🎙  استوديو المحادثة: جرّب بمايك الهاتف", Ui.TEXT, 13f, 13) { act.openStudio() }, top = 12)
 
         lastLog.layoutDirection = View.LAYOUT_DIRECTION_LTR
         col.put(lastLog, top = 16)
@@ -92,10 +78,11 @@ class HomeScreen(act: MainActivity) : Screen(act) {
 
     private fun refresh() {
         val run = AgentService.running
+        val items = Readiness.items(act)
         val missing = Readiness.missing(act)
         pill.text = if (run) "يعمل" else "متوقف"
         pill.setTextColor(if (run) Ui.GREEN else Ui.GRAY)
-        pill.background = Ui.shape(act, if (run) 0x3335C79A else 0x336F6B7A, 20)
+        pill.background = Ui.shape(act, if (run) 0x333DDC97 else 0x336B6C75, 20)
         power.running = run
         wave.active = run
         status.text = when {
@@ -104,26 +91,25 @@ class HomeScreen(act: MainActivity) : Screen(act) {
             else -> "جاهز للانطلاق"
         }
         hint.text = when {
-            run -> "الفقاعة العائمة تتحكم به فوق تيك توك"
+            run -> "تتحكم به الفقاعة العائمة فوق تيك توك"
             missing.isNotEmpty() -> "ينقصك: " + missing.joinToString("، ")
             else -> "اضغط الزر لتشغيل الوكيل"
         }
 
         val c = Repo.cfg()
         idName.text = c.name
-        idMeta.text = "لهجة ${c.dialect}"
-        idVoice.text = if (c.voiceProvider == "elevenlabs") "الصوت: ElevenLabs • ${if (c.elevenActive == 2) c.elevenName2 else c.elevenName1}"
-        else "الصوت: Gemini • ${c.voice}"
+        idMeta.text = "لهجة ${c.dialect} • " + (if (c.voiceProvider == "elevenlabs") "ElevenLabs" else "Gemini ${c.voice}")
 
-        readyBox.removeAllViews()
-        for (it in Readiness.items(act)) {
+        ready.setSubtitle("${items.count { it.ok }} من ${items.size} جاهز")
+        ready.body.removeAllViews()
+        for (it in items) {
             val r = LinearLayout(act)
             r.orientation = LinearLayout.HORIZONTAL
             r.gravity = Gravity.CENTER_VERTICAL
             r.addView(Ui.text(act, it.label, 13f, if (it.ok) Ui.TEXT else Ui.MUTED), Ui.lp(act, 0, Ui.WRAP, 1f))
             r.addView(statusDot(act, it.ok, it.optional))
             r.setOnClickListener { act.go(4) }
-            readyBox.put(r, top = 9)
+            ready.body.put(r, top = 10)
         }
         val log = AppLog.text(act).trim().lines().lastOrNull() ?: ""
         lastLog.text = if (log.isBlank()) "" else "› $log"

@@ -33,6 +33,12 @@ object Prompt {
         appendLine("- ممنوع أن تطلب من أحد أن يعيد كلامه، ولا تقل «عفواً» أو «ماذا قلت» أو «لم أسمعك». إن فاتك جزء فاستنتجه من السياق وأجب على المفهوم، أو اسأل سؤالاً محدداً وذكياً عن الجزء الناقص فقط («تقصد كذا؟»)، أو تجاهله إن لم يكن مهماً.")
         appendLine("- لا تقاطع أحداً في منتصف جملته. انتظر تمام الفكرة قبل أن تتكلم.")
         appendLine()
+        appendLine("## الأداء الصوتي (كيف تُسمَع)")
+        appendLine("- تكلّم كإنسان في مجلس حيّ: إيقاع متفاوت، وقفات قصيرة طبيعية، وجمل ناقصة أحياناً، ونبرة تتبع الموقف (تضحك حين يضحكون، تهدأ حين يهدأ الجو، وتعلو حماستك مع الحماس).")
+        appendLine("- لا تتكلم كمن يُلقي خطاباً. بدّل بين رد قصير جداً وجملتين، ولا تبدأ كل ردودك بالصيغة نفسها.")
+        appendLine("- ضحكة أو تنهيدة أو همهمة خفيفة مسموحة حين تناسب الموقف، دون مبالغة.")
+        if (c.speechStyle.isNotBlank()) appendLine("- أسلوبك المفضّل في الأداء: ${c.speechStyle}.")
+        appendLine()
         appendLine("## أسلوب الكلام الواقعي")
         appendLine("- جمل قصيرة محكية كما يتكلم الناس، بلهجة ${c.dialect}. لا قوائم ولا ترقيم ولا لغة مكتوبة رسمية.")
         appendLine("- ابدأ بالجواب مباشرة. لا تُعد السؤال ولا تقل «سؤال ممتاز».")
@@ -118,7 +124,7 @@ object Prompt {
      */
     fun setup(
         model: String, c: Cfg, system: String, handle: String?,
-        extras: Boolean = false, interrupts: Boolean = false
+        extras: Boolean = false, interrupts: Boolean = false, affective: Boolean = false
     ): JSONObject {
         val gen = JSONObject()
             .put("responseModalities", JSONArray().put("AUDIO"))
@@ -130,6 +136,7 @@ object Prompt {
                     JSONObject().put("prebuiltVoiceConfig", JSONObject().put("voiceName", c.voice))
                 )
             )
+        if (affective) gen.put("enableAffectiveDialog", true)
         val vad = JSONObject()
             .put("startOfSpeechSensitivity", "START_SENSITIVITY_LOW")
             .put("endOfSpeechSensitivity", "END_SENSITIVITY_LOW")

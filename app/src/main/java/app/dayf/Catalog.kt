@@ -24,5 +24,7 @@ object Catalog {
         "eleven_multilingual_v2" to "Multilingual v2 (أنقى)"
     )
 
+    val styles = listOf("دافئ وقريب", "هادئ ورزين", "حماسي وسريع", "مرح وخفيف", "جاد ومباشر", "ساخر بلطف")
+
     const val SAMPLE = "مرحباً بكم جميعاً، سعيد جداً بوجودي معكم الليلة."
 }

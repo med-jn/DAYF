@@ -85,7 +85,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private val yieldHits = java.util.ArrayDeque<Pair<Long, Int>>()
     private var inputSinceDecision = 0
     private var extrasOn = false
-    private var extrasFailed = false
+    private var proactiveFailed = false
+    private var affectiveFailed = false
+    private var proactiveOn = false
+    private var affectiveOn = false
     private var setupDone = false
     private var duckUntil = 0L
     private var ducked = false
@@ -272,9 +275,11 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         val client = LiveClient(gemKey, this)
         live = client
         setupDone = false
-        extrasOn = c.proactiveAudio && !extrasFailed
+        proactiveOn = c.proactiveAudio && !proactiveFailed
+        affectiveOn = c.affectiveDialog && !affectiveFailed
+        extrasOn = proactiveOn || affectiveOn
         client.connect(
-            Prompt.setup(model, c, sys, resumeHandle, extrasOn, c.interruptPolicy == "always"),
+            Prompt.setup(model, c, sys, resumeHandle, proactiveOn, c.interruptPolicy == "always", affectiveOn),
             extrasOn
         )
     }
@@ -287,7 +292,12 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onSetupComplete() {
         setupDone = true
-        AppLog.add("Gemini Live جاهز" + (if (extrasOn) " • الصمت الذكي مفعّل" else " • بدون الصمت الذكي"))
+        AppLog.add(
+            "Gemini Live جاهز" +
+                (if (proactiveOn) " • صمت ذكي" else "") +
+                (if (affectiveOn) " • حوار عاطفي" else "") +
+                (if (!extrasOn) " • الوضع الأساسي" else "")
+        )
         if (cfg?.screenMode != "manual") exec.execute { verifyNow("بداية الجلسة", false) }
         attempt = 0
         lastAnnG = null
@@ -447,9 +457,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     override fun onClosed(code: Int, reason: String) {
         if (stopping) return
         if (!setupDone && extrasOn && code != -1) {
-            extrasFailed = true
+            val dropped = if (affectiveOn) "الحوار العاطفي" else "الصمت الذكي"
+            if (affectiveOn) affectiveFailed = true else proactiveFailed = true
             resumeHandle = null
-            AppLog.add("الصمت الذكي غير مدعوم في هذا النموذج ($code): ${reason.take(140)} — إعادة الاتصال بدونه")
+            AppLog.add("$dropped غير مدعوم في هذا النموذج ($code): ${reason.take(140)} — إعادة الاتصال بدونه")
             main.postDelayed({ connectLive() }, 300)
             return
         }

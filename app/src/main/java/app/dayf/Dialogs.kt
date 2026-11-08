@@ -47,7 +47,7 @@ object Dialogs {
             val row = LinearLayout(a)
             row.orientation = LinearLayout.HORIZONTAL
             row.addView(Ui.ghostBtn(a, "إلغاء") { dlg.dismiss() }, Ui.lp(a, 0, Ui.WRAP, 1f, end = 6))
-            row.addView(Ui.goldBtn(a, okLabel, 14f, 11) {
+            row.addView(Ui.primaryBtn(a, okLabel, 14f, 11) {
                 onOk(edits.map { it.text.toString().trim() })
                 dlg.dismiss()
             }, Ui.lp(a, 0, Ui.WRAP, 1.4f, start = 6))
@@ -74,7 +74,7 @@ object Dialogs {
     fun message(a: Activity, title: String, msg: String) {
         val d = shell(a, title) { p, dlg ->
             p.addView(Ui.text(a, msg, 14f, Ui.TEXT), Ui.lp(a, Ui.MATCH, Ui.WRAP, top = 6))
-            p.addView(Ui.goldBtn(a, "حسناً", 14f, 11) { dlg.dismiss() }, Ui.lp(a, Ui.MATCH, Ui.WRAP, top = 18))
+            p.addView(Ui.primaryBtn(a, "حسناً", 14f, 11) { dlg.dismiss() }, Ui.lp(a, Ui.MATCH, Ui.WRAP, top = 18))
         }
         d.show()
     }

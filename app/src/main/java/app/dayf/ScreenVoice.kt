@@ -4,7 +4,6 @@ import android.view.Gravity
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.TextView
 import org.json.JSONObject
 import app.dayf.Ui.put
 
@@ -17,7 +16,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
     private val elevenBox = LinearLayout(act)
     private val cards = LinkedHashMap<String, LinearLayout>()
     private var geminiVoice = "Charon"
-    private val state = Ui.text(act, "", 13f, Ui.GOLD_L)
+    private val state = Ui.text(act, "", 13f, Ui.CYAN)
 
     private lateinit var elKey: EditText
     private lateinit var el1Name: EditText
@@ -37,18 +36,17 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
 
     private fun build() {
         col.put(Ui.title(act, "الصوت", "اختر صوت الضيف بأذنك"))
-        col.put(Ornament(act), top = 10, h = dp(16))
 
         provider = Segmented(act, listOf("أصوات Gemini", "ElevenLabs"), 0) { showProvider(it) }
-        col.put(provider.view, top = 2)
-        col.put(state, top = 10)
+        col.put(provider.view, top = 16)
+        col.put(state, top = 8)
 
         // ---- Gemini
         geminiBox.orientation = LinearLayout.VERTICAL
-        geminiBox.put(Ui.text(act, "٣٠ صوتاً من Gemini. اضغط ▶ للاستماع ثم اختر.", 12f, Ui.MUTED), top = 6)
+        val gv = Collapsible(act, "الأصوات", "٣٠ صوتاً: اضغط ▶ للاستماع ثم اختر", true)
         val flow = FlowLayout(act)
         flow.layoutDirection = View.LAYOUT_DIRECTION_RTL
-        val w = (act.resources.displayMetrics.widthPixels - dp(36) - dp(10)) / 2
+        val w = (act.resources.displayMetrics.widthPixels - dp(36) - dp(32) - dp(8)) / 2
         for (v in Catalog.geminiVoices) {
             val card = LinearLayout(act)
             card.orientation = LinearLayout.VERTICAL
@@ -57,8 +55,8 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
             val top = LinearLayout(act)
             top.orientation = LinearLayout.HORIZONTAL
             top.gravity = Gravity.CENTER_VERTICAL
-            top.addView(Ui.text(act, v.name, 16f, Ui.TEXT, false, true), LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
-            val play = IconView(act, Ic.PLAY, Ui.GOLD_L)
+            top.addView(Ui.text(act, v.name, 15f, Ui.TEXT, true), LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
+            val play = IconView(act, Ic.PLAY, Ui.CYAN)
             play.isClickable = true
             play.setOnClickListener { preview(v.name) }
             top.addView(play, LinearLayout.LayoutParams(dp(26), dp(26)))
@@ -71,56 +69,55 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
             cards[v.name] = card
             flow.addView(card, LinearLayout.LayoutParams(w, Ui.WRAP))
         }
-        geminiBox.put(flow, top = 10)
-        col.put(geminiBox)
+        gv.body.put(flow, top = 4)
+        geminiBox.put(gv)
+        col.put(geminiBox, top = 12)
 
         // ---- ElevenLabs
         elevenBox.orientation = LinearLayout.VERTICAL
-        val k = Ui.panel(act)
-        k.addView(Ui.sectionHead(act, "الربط"))
-        k.put(Ui.label(act, "مفتاح ElevenLabs (يُحفظ على هذا الهاتف فقط)"), top = 10)
+        val k = Collapsible(act, "الربط", "مفتاح ElevenLabs (يبقى على هذا الهاتف)", true)
         elKey = Ui.field(act, "xi-api-key", "", false, true, true)
-        k.put(elKey, top = 4)
-        elevenBox.put(k, top = 8)
+        k.body.put(elKey)
+        elevenBox.put(k)
 
-        val v = Ui.panel(act)
-        v.addView(Ui.sectionHead(act, "الأصوات"))
-        v.put(Ui.label(act, "الصوت الأول: الاسم ثم المعرّف (Voice ID)"), top = 10)
+        val v = Collapsible(act, "الأصوات", "صوتان يمكن التبديل بينهما", true)
+        v.body.put(Ui.label(act, "الصوت 1: الاسم ثم المعرّف (Voice ID)"))
         el1Name = Ui.field(act, "اسم للتذكير", "")
-        v.put(el1Name, top = 4)
+        v.body.put(el1Name, top = 4)
         el1Id = Ui.field(act, "Voice ID", "", false, true)
-        v.put(el1Id, top = 6)
-        v.put(Ui.label(act, "الصوت الثاني"), top = 12)
+        v.body.put(el1Id, top = 6)
+        v.body.put(Ui.label(act, "الصوت 2"), top = 12)
         el2Name = Ui.field(act, "اسم للتذكير", "")
-        v.put(el2Name, top = 4)
+        v.body.put(el2Name, top = 4)
         el2Id = Ui.field(act, "Voice ID", "", false, true)
-        v.put(el2Id, top = 6)
-        v.put(Ui.label(act, "الصوت المستعمل"), top = 12)
+        v.body.put(el2Id, top = 6)
+        v.body.put(Ui.label(act, "المستعمل الآن"), top = 12)
         elActive = Segmented(act, listOf("الصوت 1", "الصوت 2"), 0) {}
-        v.put(elActive.view, top = 4)
+        v.body.put(elActive.view, top = 4)
         elevenBox.put(v, top = 12)
 
-        val m = Ui.panel(act)
-        m.addView(Ui.sectionHead(act, "الجودة"))
+        val m = Collapsible(act, "الجودة", "النموذج والثبات والتشابه", false)
         elModel = Segmented(act, Catalog.elevenModels.map { it.second }, 0) {}
-        m.put(elModel.view, top = 10)
+        m.body.put(elModel.view)
         stab = StepperRow(act, "الثبات", 0.45, 0.0, 1.0, 0.05, 2)
         sim = StepperRow(act, "التشابه", 0.8, 0.0, 1.0, 0.05, 2)
-        m.put(stab.view, top = 14)
-        m.put(sim.view, top = 10)
-        m.put(Ui.ghostBtn(act, "▶  استمع إلى الصوت") { previewEleven() }, top = 14)
+        m.body.put(stab.view, top = 14)
+        m.body.put(sim.view, top = 10)
         elevenBox.put(m, top = 12)
-        elevenBox.put(Ui.text(act, "مع ElevenLabs يبقى Gemini هو من يفهم ويفكّر، ثم يُنطق ردّه بصوت ElevenLabs جملةً جملة. قد يزيد التأخير قليلاً.", 12f, Ui.MUTED), top = 10)
-        col.put(elevenBox)
+        elevenBox.put(Ui.ghostBtn(act, "▶  استمع إلى صوت ElevenLabs", Ui.CYAN, 13f, 12) { previewEleven() }, top = 12)
+        elevenBox.put(
+            Ui.text(act, "Gemini يفهم ويفكّر، ثم يُنطق ردّه بصوت ElevenLabs جملةً جملة، فقد يزيد التأخير قليلاً.", 12f, Ui.MUTED),
+            top = 8
+        )
+        col.put(elevenBox, top = 12)
 
         // ---- common
-        val c = Ui.panel(act)
-        gain = StepperRow(act, "مستوى خرج الصوت", 1.0, 0.1, 1.0, 0.1, 1)
-        c.addView(gain.view)
-        c.put(Ui.text(act, "اخفضه إن تشوّه الصوت داخل البث بسبب وصلة السماعة.", 12f, Ui.MUTED), top = 8)
-        col.put(c, top = 14)
+        val c = Collapsible(act, "مستوى الخرج", "اخفضه إن تشوّه الصوت داخل البث", false)
+        gain = StepperRow(act, "مستوى الصوت", 1.0, 0.1, 1.0, 0.1, 1)
+        c.body.addView(gain.view)
+        col.put(c, top = 12)
 
-        col.put(Ui.goldBtn(act, "حفظ إعدادات الصوت") { save() }, top = 18)
+        col.put(Ui.primaryBtn(act, "حفظ إعدادات الصوت") { save() }, top = 20)
         showProvider(0)
     }
 
@@ -132,7 +129,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
     private fun paintCards() {
         for ((name, card) in cards) {
             val sel = name == geminiVoice
-            card.background = if (sel) Ui.shape(act, Ui.CARD2, 14, Ui.GOLD, 2) else Ui.shape(act, Ui.CARD, 14, Ui.LINE)
+            card.background = if (sel) Ui.shape(act, Ui.CARD2, 14, Ui.CYAN, 2) else Ui.shape(act, Ui.BG, 14, Ui.LINE)
         }
     }
 
@@ -149,6 +146,9 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
             elActive.select(if (c.elevenActive == 2) 1 else 0, false)
             val mi = Catalog.elevenModels.indexOfFirst { it.first == c.elevenModel }
             elModel.select(if (mi >= 0) mi else 0, false)
+            stab.set(c.elevenStability)
+            sim.set(c.elevenSimilarity)
+            gain.set(c.outGain)
             filled = true
         }
         if (elKey.text.isBlank()) elKey.setText(Prefs.get(act, "elevenKey"))

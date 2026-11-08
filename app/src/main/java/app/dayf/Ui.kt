@@ -2,12 +2,15 @@ package app.dayf
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PixelFormat
-import android.graphics.RectF
+import android.graphics.RadialGradient
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -20,31 +23,29 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 
-/** Visual identity: obsidian + brass. Display face: Reem Kufi. Calligraphy: Aref Ruqaa. Body: Tajawal. */
+/** Identity: pitch black, TikTok cyan #25F4EE and red #FE2C55, white type. One family: IBM Plex Sans Arabic. */
 object Ui {
     const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
     const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 
-    val BG = Color.parseColor("#0A0910")
-    val CARD = Color.parseColor("#13121B")
-    val CARD2 = Color.parseColor("#1C1B28")
-    val LINE = Color.parseColor("#2B2939")
-    val TEXT = Color.parseColor("#F4EEDF")
-    val MUTED = Color.parseColor("#A39F94")
-    val GOLD = Color.parseColor("#C8A24A")
-    val GOLD_L = Color.parseColor("#EBD08A")
-    val GOLD_D = Color.parseColor("#8E6F2A")
-    val ACCENT = GOLD
-    val GREEN = Color.parseColor("#35C79A")
-    val RED = Color.parseColor("#D9566B")
-    val AMBER = Color.parseColor("#E8B04B")
-    val BLUE = Color.parseColor("#5B8DEF")
-    val GRAY = Color.parseColor("#6F6B7A")
+    val BG = Color.parseColor("#000000")
+    val CARD = Color.parseColor("#121216")
+    val CARD2 = Color.parseColor("#1E1E24")
+    val LINE = Color.parseColor("#2C2C34")
+    val TEXT = Color.parseColor("#FFFFFF")
+    val MUTED = Color.parseColor("#8E8F98")
+    val CYAN = Color.parseColor("#25F4EE")
+    val RED = Color.parseColor("#FE2C55")
+    val ACCENT = RED
+    val GREEN = Color.parseColor("#3DDC97")
+    val AMBER = Color.parseColor("#FFC24B")
+    val BLUE = CYAN
+    val GRAY = Color.parseColor("#6B6C75")
 
     fun dp(c: Context, v: Int): Int = (v * c.resources.displayMetrics.density).toInt()
     fun dpf(c: Context, v: Float): Float = v * c.resources.displayMetrics.density
 
-    // ---------------------------------------------------------------- fonts
+    // ---------------------------------------------------------------- font (single family)
     private val fonts = HashMap<String, Typeface>()
 
     private fun tf(c: Context, file: String): Typeface = fonts.getOrPut(file) {
@@ -55,10 +56,19 @@ object Ui {
         }
     }
 
-    fun fBody(c: Context): Typeface = tf(c, "Tajawal-Medium.ttf")
-    fun fBold(c: Context): Typeface = tf(c, "Tajawal-Bold.ttf")
-    fun fDisplay(c: Context): Typeface = tf(c, "ReemKufi.ttf")
-    fun fCalli(c: Context): Typeface = tf(c, "ArefRuqaa-Bold.ttf")
+    fun fBody(c: Context): Typeface = tf(c, "Plex-Medium.ttf")
+    fun fBold(c: Context): Typeface = tf(c, "Plex-Bold.ttf")
+
+    // ---------------------------------------------------------------- logo assets
+    private val bitmaps = HashMap<String, Bitmap?>()
+
+    fun logo(c: Context, name: String): Bitmap? = bitmaps.getOrPut(name) {
+        try {
+            c.applicationContext.assets.open("logo/$name.png").use { BitmapFactory.decodeStream(it) }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     // ---------------------------------------------------------------- drawables
     fun shape(c: Context, fill: Int, radiusDp: Int, stroke: Int = 0, strokeDp: Int = 1): GradientDrawable {
@@ -69,54 +79,29 @@ object Ui {
         return g
     }
 
-    fun goldFill(c: Context, radiusDp: Int): GradientDrawable {
-        val g = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(GOLD_L, GOLD))
-        g.cornerRadius = dp(c, radiusDp).toFloat()
-        return g
-    }
-
     private fun ripple(base: Drawable): Drawable =
         RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), base, null)
 
-    /** Rounded dark panel with brass corner ticks. */
-    class PanelDrawable(private val c: Context) : Drawable() {
-        private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val line = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val tick = Paint(Paint.ANTI_ALIAS_FLAG)
+    /** Window background: black with faint cyan and red glows (the two halves of the logo). */
+    class AppBg : Drawable() {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        init {
-            fill.color = CARD
-            line.color = LINE
-            line.style = Paint.Style.STROKE
-            line.strokeWidth = dpf(c, 1f)
-            tick.color = GOLD
-            tick.style = Paint.Style.STROKE
-            tick.strokeWidth = dpf(c, 1.6f)
-            tick.strokeCap = Paint.Cap.ROUND
-        }
-
-        override fun draw(canvas: Canvas) {
+        override fun draw(c: Canvas) {
             val b = bounds
-            val r = dpf(c, 18f)
-            val rect = RectF(b.left + 1f, b.top + 1f, b.right - 1f, b.bottom - 1f)
-            canvas.drawRoundRect(rect, r, r, fill)
-            canvas.drawRoundRect(rect, r, r, line)
-            val inset = dpf(c, 9f)
-            val len = dpf(c, 11f)
-            val l = rect.left + inset
-            val t = rect.top + inset
-            val rr = rect.right - inset
-            val bb = rect.bottom - inset
-            canvas.drawLine(l, t, l + len, t, tick); canvas.drawLine(l, t, l, t + len, tick)
-            canvas.drawLine(rr, t, rr - len, t, tick); canvas.drawLine(rr, t, rr, t + len, tick)
-            canvas.drawLine(l, bb, l + len, bb, tick); canvas.drawLine(l, bb, l, bb - len, tick)
-            canvas.drawLine(rr, bb, rr - len, bb, tick); canvas.drawLine(rr, bb, rr, bb - len, tick)
+            p.shader = null
+            p.color = BG
+            c.drawRect(b, p)
+            p.shader = RadialGradient(b.width() * 0.05f, b.height() * 0.02f, b.width() * 0.9f, Color.argb(34, 37, 244, 238), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+            c.drawRect(b, p)
+            p.shader = RadialGradient(b.width() * 0.98f, b.height() * 0.98f, b.width() * 0.9f, Color.argb(30, 254, 44, 85), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+            c.drawRect(b, p)
+            p.shader = null
         }
 
         override fun setAlpha(alpha: Int) {}
         override fun setColorFilter(cf: ColorFilter?) {}
         @Deprecated("Deprecated in Java")
-        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+        override fun getOpacity(): Int = PixelFormat.OPAQUE
     }
 
     // ---------------------------------------------------------------- text
@@ -125,7 +110,7 @@ object Ui {
         t.text = s
         t.textSize = sp
         t.setTextColor(color)
-        t.typeface = if (display) fDisplay(c) else if (bold) fBold(c) else fBody(c)
+        t.typeface = if (bold || display) fBold(c) else fBody(c)
         return t
     }
 
@@ -145,21 +130,22 @@ object Ui {
         return t
     }
 
-    fun goldBtn(c: Context, label: String, sp: Float = 15f, padV: Int = 13, onClick: () -> Unit): TextView {
-        val t = text(c, label, sp, BG, true)
+    /** Main call-to-action: TikTok red. */
+    fun primaryBtn(c: Context, label: String, sp: Float = 15f, padV: Int = 13, onClick: () -> Unit): TextView {
+        val t = text(c, label, sp, TEXT, true)
         t.gravity = Gravity.CENTER
         t.setPadding(dp(c, 14), dp(c, padV), dp(c, 14), dp(c, padV))
-        t.background = ripple(goldFill(c, 14))
+        t.background = ripple(shape(c, RED, 14))
         t.isClickable = true
         t.setOnClickListener { onClick() }
         return t
     }
 
-    fun ghostBtn(c: Context, label: String, color: Int = GOLD_L, sp: Float = 13f, padV: Int = 10, onClick: () -> Unit): TextView {
+    fun ghostBtn(c: Context, label: String, color: Int = TEXT, sp: Float = 13f, padV: Int = 10, onClick: () -> Unit): TextView {
         val t = text(c, label, sp, color, true)
         t.gravity = Gravity.CENTER
         t.setPadding(dp(c, 12), dp(c, padV), dp(c, 12), dp(c, padV))
-        t.background = ripple(shape(c, Color.TRANSPARENT, 14, GOLD_D, 1))
+        t.background = ripple(shape(c, Color.TRANSPARENT, 14, LINE, 1))
         t.isClickable = true
         t.setOnClickListener { onClick() }
         return t
@@ -168,7 +154,7 @@ object Ui {
     fun chip(c: Context, label: String, color: Int): TextView {
         val t = text(c, label, 12f, color, true)
         t.setPadding(dp(c, 11), dp(c, 5), dp(c, 11), dp(c, 5))
-        t.background = shape(c, Color.argb(40, Color.red(color), Color.green(color), Color.blue(color)), 20)
+        t.background = shape(c, Color.argb(36, Color.red(color), Color.green(color), Color.blue(color)), 20)
         return t
     }
 
@@ -176,8 +162,8 @@ object Ui {
     fun panel(c: Context): LinearLayout {
         val l = LinearLayout(c)
         l.orientation = LinearLayout.VERTICAL
-        l.background = PanelDrawable(c)
-        l.setPadding(dp(c, 18), dp(c, 18), dp(c, 18), dp(c, 18))
+        l.background = shape(c, CARD, 18, LINE)
+        l.setPadding(dp(c, 16), dp(c, 16), dp(c, 16), dp(c, 16))
         return l
     }
 
@@ -195,21 +181,16 @@ object Ui {
         return p
     }
 
+    /** Screen title with the glitch treatment. */
     fun title(c: Context, title: String, sub: String? = null): LinearLayout {
         val box = LinearLayout(c)
         box.orientation = LinearLayout.VERTICAL
-        val row = LinearLayout(c)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.gravity = Gravity.CENTER_VERTICAL
-        row.addView(KhatamView(c, GOLD, false), LinearLayout.LayoutParams(dp(c, 22), dp(c, 22)))
-        val t = text(c, title, 26f, TEXT, false, true)
-        row.addView(t, lp(c, WRAP, WRAP, start = 10))
-        box.addView(row)
-        if (sub != null) box.addView(text(c, sub, 13f, MUTED), lp(c, WRAP, WRAP, top = 4))
+        box.addView(GlitchText(c, title, 28f, Gravity.START), LinearLayout.LayoutParams(MATCH, WRAP))
+        if (sub != null) box.addView(text(c, sub, 13f, MUTED), lp(c, WRAP, WRAP, top = 2))
         return box
     }
 
-    fun sectionHead(c: Context, s: String): TextView = text(c, s, 17f, GOLD_L, false, true)
+    fun sectionHead(c: Context, s: String): TextView = text(c, s, 16f, TEXT, true)
 
     fun field(
         c: Context, hint: String, initial: String, multiline: Boolean = false,
@@ -249,7 +230,7 @@ object Ui {
     }
 }
 
-/** Segmented control, brass highlight. */
+/** Segmented control: selected = white pill, black text. */
 class Segmented(val ctx: Context, labels: List<String>, var index: Int, private val onSelect: (Int) -> Unit) {
     val view = LinearLayout(ctx)
     private val tabs = ArrayList<TextView>()
@@ -279,7 +260,7 @@ class Segmented(val ctx: Context, labels: List<String>, var index: Int, private 
     private fun paint() {
         for (i in tabs.indices) {
             val sel = i == index
-            tabs[i].background = if (sel) Ui.goldFill(ctx, 11) else null
+            tabs[i].background = if (sel) Ui.shape(ctx, Ui.TEXT, 11) else null
             tabs[i].setTextColor(if (sel) Ui.BG else Ui.MUTED)
         }
     }

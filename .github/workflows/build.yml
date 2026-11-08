@@ -20,7 +20,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build debug APK
+      - name: Build debug APK (fixed signature)
         run: |
           set -o pipefail
           gradle assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
@@ -33,15 +33,15 @@ jobs:
             grep -E '^e: |What went wrong|error:' -A2 build.log | head -80 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "=== ERRORS ==="
-          grep -E '^e: |What went wrong|error:' -A2 build.log | head -80 || true
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk TikGuest.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: dayf-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-      - name: Publish release (downloadable straight from the phone)
+          name: TikGuest-apk
+          path: TikGuest.apk
+      - name: Publish release (download straight from the phone)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Build ${{ github.run_number }}
-          files: app/build/outputs/apk/debug/app-debug.apk
+          name: Tik Guest ${{ github.run_number }}
+          files: TikGuest.apk

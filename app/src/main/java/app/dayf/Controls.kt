@@ -42,18 +42,23 @@ class StepperRow(
     var value: Double = value
         private set
     val view = LinearLayout(ctx)
-    private val valueText = Ui.text(ctx, "", 15f, Ui.GOLD_L, true)
+    private val valueText = Ui.text(ctx, "", 15f, Ui.CYAN, true)
 
     init {
         view.orientation = LinearLayout.HORIZONTAL
         view.gravity = Gravity.CENTER_VERTICAL
         view.addView(Ui.text(ctx, label, 14f, Ui.TEXT), LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
-        val minus = Ui.ghostBtn(ctx, "−", Ui.GOLD_L, 18f, 0) { bump(-step) }
-        val plus = Ui.ghostBtn(ctx, "+", Ui.GOLD_L, 18f, 0) { bump(step) }
+        val minus = Ui.ghostBtn(ctx, "−", Ui.CYAN, 18f, 0) { bump(-step) }
+        val plus = Ui.ghostBtn(ctx, "+", Ui.CYAN, 18f, 0) { bump(step) }
         view.addView(minus, LinearLayout.LayoutParams(Ui.dp(ctx, 40), Ui.dp(ctx, 38)))
         valueText.gravity = Gravity.CENTER
         view.addView(valueText, LinearLayout.LayoutParams(Ui.dp(ctx, 72), Ui.WRAP))
         view.addView(plus, LinearLayout.LayoutParams(Ui.dp(ctx, 40), Ui.dp(ctx, 38)))
+        render()
+    }
+
+    fun set(v: Double) {
+        value = v.coerceIn(min, max)
         render()
     }
 

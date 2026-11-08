@@ -30,7 +30,7 @@ class BrainScreen(act: MainActivity) : Screen(act) {
         }
         col.put(seg.view, top = 2)
         col.put(notice, top = 10)
-        col.put(Ui.goldBtn(act, "＋  إضافة") { edit(null) }, top = 12)
+        col.put(Ui.primaryBtn(act, "＋  إضافة") { edit(null) }, top = 12)
         listBox.orientation = LinearLayout.VERTICAL
         col.put(listBox, top = 6)
     }
@@ -77,7 +77,7 @@ class BrainScreen(act: MainActivity) : Screen(act) {
             val active = o.optBoolean("active", true)
             val card = Ui.panel(act)
             card.setPadding(dp(16), dp(14), dp(16), dp(12))
-            if (mode == 1) card.addView(Ui.text(act, o.strOr("topic"), 16f, Ui.GOLD_L, false, true))
+            if (mode == 1) card.addView(Ui.text(act, o.strOr("topic"), 16f, Ui.CYAN, false, true))
             val body = Ui.text(act, if (mode == 0) o.strOr("text") else o.strOr("content"), 14f, if (active) Ui.TEXT else Ui.GRAY)
             card.put(body, top = if (mode == 1) 4 else 0)
             if (mode == 1 && o.strOr("keywords").isNotBlank()) {
@@ -88,7 +88,7 @@ class BrainScreen(act: MainActivity) : Screen(act) {
             act2.gravity = Gravity.CENTER_VERTICAL
             act2.addView(Toggle(act, active) { v -> toggleActive(id, v) })
             act2.addView(View(act), LinearLayout.LayoutParams(0, 1, 1f))
-            val ed = IconView(act, Ic.EDIT, Ui.GOLD_L)
+            val ed = IconView(act, Ic.EDIT, Ui.CYAN)
             ed.isClickable = true
             ed.setOnClickListener { edit(o) }
             act2.addView(ed, Ui.lp(act, dp(28), dp(28), end = 14))

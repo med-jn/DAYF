@@ -42,7 +42,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         AppLog.installCrashHandler(this)
-        window.setBackgroundDrawable(ArabesqueBg(this))
+        window.setBackgroundDrawable(Ui.AppBg())
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Ui.BG
 
@@ -54,7 +54,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
         val head = LinearLayout(this)
         head.orientation = LinearLayout.HORIZONTAL
         head.gravity = Gravity.CENTER_VERTICAL
-        val back = IconView(this, Ic.BACK, Ui.GOLD_L)
+        val back = IconView(this, Ic.BACK, Ui.CYAN)
         back.isClickable = true
         back.setOnClickListener { finish() }
         head.addView(back, LinearLayout.LayoutParams(dp(30), dp(30)))
@@ -66,7 +66,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
         val info = if (c.voiceProvider == "elevenlabs") "ElevenLabs • ${if (c.elevenActive == 2) c.elevenName2 else c.elevenName1}" else "Gemini • ${c.voice}"
         val chips = LinearLayout(this)
         chips.orientation = LinearLayout.HORIZONTAL
-        chips.addView(Ui.chip(this, c.name, Ui.GOLD_L))
+        chips.addView(Ui.chip(this, c.name, Ui.CYAN))
         chips.addView(Ui.chip(this, info, Ui.BLUE), Ui.lp(this, Ui.WRAP, Ui.WRAP, start = 8))
         chips.addView(Ui.chip(this, c.dialect, Ui.GREEN), Ui.lp(this, Ui.WRAP, Ui.WRAP, start = 8))
         root.put(chips, top = 4)
@@ -95,9 +95,9 @@ class StudioActivity : Activity(), LiveClient.Listener {
 
     // ------------------------------------------------------------ bubbles
     private fun bubble(isUser: Boolean): TextView {
-        val t = Ui.text(this, "", 14f, if (isUser) Ui.GOLD_L else Ui.TEXT)
+        val t = Ui.text(this, "", 14f, if (isUser) Ui.CYAN else Ui.TEXT)
         t.setPadding(dp(14), dp(10), dp(14), dp(10))
-        t.background = if (isUser) Ui.shape(this, Color.TRANSPARENT, 16, Ui.GOLD_D, 1) else Ui.shape(this, Ui.CARD2, 16, Ui.LINE)
+        t.background = if (isUser) Ui.shape(this, Color.TRANSPARENT, 16, Ui.LINE, 1) else Ui.shape(this, Ui.CARD2, 16, Ui.LINE)
         val p = Ui.lp(this, Ui.WRAP, Ui.WRAP, top = 8)
         p.gravity = if (isUser) Gravity.START else Gravity.END
         transcript.addView(t, p)

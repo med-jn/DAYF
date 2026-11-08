@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -46,7 +47,7 @@ class Overlay(private val ctx: Context, private val a: Actions) {
 
     private val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val root = LinearLayout(ctx)
-    private val bubble = TextView(ctx)
+    private val bubble = ImageView(ctx)
     private val panel = LinearLayout(ctx)
     private val stateChip = TextView(ctx)
     private val gateText = TextView(ctx)
@@ -75,21 +76,21 @@ class Overlay(private val ctx: Context, private val a: Actions) {
         root.orientation = LinearLayout.VERTICAL
         root.layoutDirection = View.LAYOUT_DIRECTION_RTL
 
-        bubble.text = "🎙"
-        bubble.textSize = 22f
-        bubble.gravity = Gravity.CENTER
+        bubble.setImageBitmap(Ui.logo(ctx, "mark"))
+        bubble.scaleType = ImageView.ScaleType.FIT_CENTER
+        bubble.setPadding(px(13), px(10), px(13), px(10))
         setBubble(Ui.GRAY)
         root.addView(bubble, LinearLayout.LayoutParams(px(56), px(56)))
 
         panel.orientation = LinearLayout.VERTICAL
-        panel.background = Ui.shape(ctx, 0xF2171A21.toInt(), 18, Ui.LINE)
+        panel.background = Ui.shape(ctx, 0xF2121216.toInt(), 18, Ui.LINE)
         panel.setPadding(px(14), px(14), px(14), px(14))
 
         // header
         val head = LinearLayout(ctx)
         head.orientation = LinearLayout.HORIZONTAL
         head.gravity = Gravity.CENTER_VERTICAL
-        head.addView(Ui.text(ctx, "الضيف", 17f, Ui.TEXT, true), Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        head.addView(Ui.text(ctx, "Tik Guest", 17f, Ui.TEXT, true), Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         stateChip.text = "…"
         stateChip.textSize = 12f
         stateChip.setPadding(px(10), px(4), px(10), px(4))
@@ -162,8 +163,8 @@ class Overlay(private val ctx: Context, private val a: Actions) {
 
         val r3 = LinearLayout(ctx)
         r3.orientation = LinearLayout.HORIZONTAL
-        r3.addView(Ui.btn(ctx, "🔄 تحقق من حالتي", Ui.CARD2, Ui.GOLD_L, sp = 12f, padV = 9) { a.onVerify() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, end = 4))
-        r3.addView(Ui.btn(ctx, "👁 أرِه الشاشة", Ui.CARD2, Ui.GOLD_L, sp = 12f, padV = 9) { a.onShowScreen() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, start = 4))
+        r3.addView(Ui.btn(ctx, "🔄 تحقق من حالتي", Ui.CARD2, Ui.CYAN, sp = 12f, padV = 9) { a.onVerify() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, end = 4))
+        r3.addView(Ui.btn(ctx, "👁 أرِه الشاشة", Ui.CARD2, Ui.CYAN, sp = 12f, padV = 9) { a.onShowScreen() }, Ui.lp(ctx, 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f, start = 4))
         panel.addView(r3, Ui.lp(ctx, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, top = 8))
 
         val r2 = LinearLayout(ctx)
