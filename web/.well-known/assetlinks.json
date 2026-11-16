@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tikguest",
+      "sha256_cert_fingerprints": [
+        "47:32:C8:DF:4B:66:8B:41:59:04:9D:05:F8:11:A1:E9:31:70:FE:C7:E0:92:89:36:37:47:9E:F6:5C:78:57:63",
+        "C8:01:3A:B6:AD:21:EE:D6:91:7D:BD:FD:BE:9B:6B:7A:42:E9:B4:05:4E:F9:8B:05:C8:B7:B0:5C:12:70:C5:F8"
+      ]
+    }
+  }
+]

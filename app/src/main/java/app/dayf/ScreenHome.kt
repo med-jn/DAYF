@@ -67,7 +67,7 @@ class HomeScreen(act: MainActivity) : Screen(act) {
         col.put(id, top = 20)
 
         col.put(ready, top = 12)
-        col.put(Ui.ghostBtn(act, "🎙  استوديو المحادثة: جرّب بمايك الهاتف", Ui.TEXT, 13f, 13) { act.openStudio() }, top = 12)
+        col.put(Ui.iconGhost(act, Ic.STUDIO, "استوديو المحادثة: جرّب بمايك الهاتف", Ui.TEXT, 13f, 13) { act.openStudio() }, top = 12)
 
         lastLog.layoutDirection = View.LAYOUT_DIRECTION_LTR
         col.put(lastLog, top = 16)
@@ -112,6 +112,6 @@ class HomeScreen(act: MainActivity) : Screen(act) {
             ready.body.put(r, top = 10)
         }
         val log = AppLog.text(act).trim().lines().lastOrNull() ?: ""
-        lastLog.text = if (log.isBlank()) "" else "› $log"
+        lastLog.visibility = View.GONE // technical details live in Settings → log, never on the home screen
     }
 }

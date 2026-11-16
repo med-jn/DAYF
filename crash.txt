@@ -1,0 +1,85 @@
+--------- beginning of crash
+11-14 18:14:49.720 E/AndroidRuntime( 9108): FATAL EXCEPTION: Thread-8
+11-14 18:14:49.720 E/AndroidRuntime( 9108): Process: com.tikguest, PID: 9108
+11-14 18:14:49.720 E/AndroidRuntime( 9108): java.lang.NoClassDefFoundError: app.dayf.LiveClient
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.models(Ingest.kt:477)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Folders.smartOrganize(Folders.kt:50)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.BrainScreen.organize$lambda$10(ScreenBrain.kt:290)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.BrainScreen.$r8$lambda$UphG_ZK0KZb9LoouXORmRAv84Ys(ScreenBrain.kt:0)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.BrainScreen$$ExternalSyntheticLambda16.run(D8$$SyntheticClass:0)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.lang.Thread.run(Thread.java:1572)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): Caused by: java.lang.ExceptionInInitializerError
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.models(Ingest.kt:477)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.readAudio(Ingest.kt:670)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.convertFile(Ingest.kt:520)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.read(Ingest.kt:461)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.run(Ingest.kt:382)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.process$lambda$14(Ingest.kt:354)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest.$r8$lambda$63wM9kp_jcLGkg4Qj7AWkSXoofU(Ingest.kt:0)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.Ingest$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	... 1 more
+11-14 18:14:49.720 E/AndroidRuntime( 9108): Caused by: java.util.regex.PatternSyntaxException: Syntax error in regexp pattern near index 19
+11-14 18:14:49.720 E/AndroidRuntime( 9108): \{[A-Za-z _]{1,16}}
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at com.android.icu.util.regex.PatternNative.compileImpl(Native Method)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at com.android.icu.util.regex.PatternNative.<init>(PatternNative.java:53)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at com.android.icu.util.regex.PatternNative.create(PatternNative.java:49)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.util.regex.Pattern.compile(Pattern.java:3666)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.util.regex.Pattern.<init>(Pattern.java:1552)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at java.util.regex.Pattern.compile(Pattern.java:915)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at kotlin.text.Regex.<init>(Regex.kt:88)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	at app.dayf.LiveClient.<clinit>(LiveClient.kt:125)
+11-14 18:14:49.720 E/AndroidRuntime( 9108): 	... 11 more
+11-14 18:17:55.474 E/AndroidRuntime( 9506): FATAL EXCEPTION: Thread-43
+11-14 18:17:55.474 E/AndroidRuntime( 9506): Process: com.tikguest, PID: 9506
+11-14 18:17:55.474 E/AndroidRuntime( 9506): java.lang.NoClassDefFoundError: app.dayf.LiveClient
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.models(Ingest.kt:477)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Folders.smartOrganize(Folders.kt:50)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.BrainScreen.organize$lambda$10(ScreenBrain.kt:290)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.BrainScreen.$r8$lambda$UphG_ZK0KZb9LoouXORmRAv84Ys(ScreenBrain.kt:0)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.BrainScreen$$ExternalSyntheticLambda16.run(D8$$SyntheticClass:0)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.lang.Thread.run(Thread.java:1572)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): Caused by: java.lang.ExceptionInInitializerError
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.models(Ingest.kt:477)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.readAudio(Ingest.kt:670)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.convertFile(Ingest.kt:520)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.read(Ingest.kt:461)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.run(Ingest.kt:382)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.process$lambda$14(Ingest.kt:354)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest.$r8$lambda$63wM9kp_jcLGkg4Qj7AWkSXoofU(Ingest.kt:0)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.Ingest$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	... 1 more
+11-14 18:17:55.474 E/AndroidRuntime( 9506): Caused by: java.util.regex.PatternSyntaxException: Syntax error in regexp pattern near index 19
+11-14 18:17:55.474 E/AndroidRuntime( 9506): \{[A-Za-z _]{1,16}}
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at com.android.icu.util.regex.PatternNative.compileImpl(Native Method)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at com.android.icu.util.regex.PatternNative.<init>(PatternNative.java:53)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at com.android.icu.util.regex.PatternNative.create(PatternNative.java:49)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.util.regex.Pattern.compile(Pattern.java:3666)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.util.regex.Pattern.<init>(Pattern.java:1552)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at java.util.regex.Pattern.compile(Pattern.java:915)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at kotlin.text.Regex.<init>(Regex.kt:88)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	at app.dayf.LiveClient.<clinit>(LiveClient.kt:125)
+11-14 18:17:55.474 E/AndroidRuntime( 9506): 	... 11 more
+11-14 18:19:26.927 E/AndroidRuntime(11969): FATAL EXCEPTION: Thread-9
+11-14 18:19:26.927 E/AndroidRuntime(11969): Process: com.tikguest, PID: 11969
+11-14 18:19:26.927 E/AndroidRuntime(11969): java.lang.ExceptionInInitializerError
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.Ingest.models(Ingest.kt:477)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.Folders.smartOrganize(Folders.kt:50)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.BrainScreen.organize$lambda$10(ScreenBrain.kt:290)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.BrainScreen.$r8$lambda$UphG_ZK0KZb9LoouXORmRAv84Ys(ScreenBrain.kt:0)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.BrainScreen$$ExternalSyntheticLambda16.run(D8$$SyntheticClass:0)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at java.lang.Thread.run(Thread.java:1572)
+11-14 18:19:26.927 E/AndroidRuntime(11969): Caused by: java.util.regex.PatternSyntaxException: Syntax error in regexp pattern near index 19
+11-14 18:19:26.927 E/AndroidRuntime(11969): \{[A-Za-z _]{1,16}}
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at com.android.icu.util.regex.PatternNative.compileImpl(Native Method)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at com.android.icu.util.regex.PatternNative.<init>(PatternNative.java:53)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at com.android.icu.util.regex.PatternNative.create(PatternNative.java:49)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at java.util.regex.Pattern.compile(Pattern.java:3666)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at java.util.regex.Pattern.<init>(Pattern.java:1552)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at java.util.regex.Pattern.compile(Pattern.java:915)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at kotlin.text.Regex.<init>(Regex.kt:88)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	at app.dayf.LiveClient.<clinit>(LiveClient.kt:125)
+11-14 18:19:26.927 E/AndroidRuntime(11969): 	... 6 more

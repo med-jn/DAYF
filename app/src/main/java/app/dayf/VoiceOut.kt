@@ -195,6 +195,7 @@ object VoicePreview {
 
     fun gemini(ctx: Context, apiKey: String, voiceName: String, onState: (String) -> Unit) {
         stop()
+        val t0 = System.currentTimeMillis()
         Thread {
             try {
                 val model = Repo.liveModel.ifBlank { LiveClient.pickModel(apiKey) ?: "" }
@@ -206,18 +207,29 @@ object VoicePreview {
                 val p = AgentPlayer(ctx)
                 p.start(false, false)
                 player = p
-                val cfg = Cfg(JSONObject().put("voice", voiceName).put("temperature", 0.6))
+                val cfg = Cfg(JSONObject().put("voice", voiceName).put("temperature", 0.6).put("response_speed", "fast"))
                 val sys = "أنت مذيع. عندما تصلك رسالة نصية فانطقها كما هي حرفياً بصوتك الطبيعي ودون أي زيادة."
+                var tConnected = 0L
+                var tSent = 0L
+                var first = true
                 val client = LiveClient(apiKey, object : LiveClient.Listener {
                     override fun onSetupComplete() {
-                        onState("يتكلم…")
+                        tConnected = System.currentTimeMillis()
+                        onState("متصل بعد ${tConnected - t0} م.ث، جارٍ توليد الصوت")
+                        tSent = System.currentTimeMillis()
                         live?.sendText(Catalog.SAMPLE)
                     }
-                    override fun onAudio(pcm24k: ByteArray) { p.enqueue(pcm24k) }
+                    override fun onAudio(pcm24k: ByteArray) {
+                        if (first) {
+                            first = false
+                            val now = System.currentTimeMillis()
+                            onState("أول صوت بعد ${now - tSent} م.ث (الاتصال ${tConnected - t0} م.ث)")
+                        }
+                        p.enqueue(pcm24k)
+                    }
                     override fun onInputText(t: String) {}
                     override fun onOutputText(t: String) {}
                     override fun onTurnComplete() {
-                        onState("")
                         Thread {
                             Thread.sleep(2500)
                             if (player === p) stop()
@@ -232,10 +244,19 @@ object VoicePreview {
                     }
                 })
                 live = client
-                client.connect(Prompt.setup(model, cfg, sys, null))
+                client.connect(Prompt.setup(model, cfg, sys, null, withTools = false))
             } catch (e: Exception) {
                 onState("خطأ: ${e.message}")
             }
+        }.start()
+    }
+
+    /** Resolves the Live model ahead of time so the first preview does not wait for the model list. */
+    fun warm(apiKey: String) {
+        if (Repo.liveModel.isNotBlank() || apiKey.isBlank()) return
+        Thread {
+            val m = LiveClient.pickModel(apiKey)
+            if (m != null) Repo.liveModel = m
         }.start()
     }
 

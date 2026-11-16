@@ -43,7 +43,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
 
         // ---- Gemini
         geminiBox.orientation = LinearLayout.VERTICAL
-        val gv = Collapsible(act, "الأصوات", "٣٠ صوتاً: اضغط ▶ للاستماع ثم اختر", true)
+        val gv = Collapsible(act, "الأصوات", "30 صوتاً: اضغط أيقونة التشغيل للاستماع ثم اختر", true)
         val flow = FlowLayout(act)
         flow.layoutDirection = View.LAYOUT_DIRECTION_RTL
         val w = (act.resources.displayMetrics.widthPixels - dp(36) - dp(32) - dp(8)) / 2
@@ -75,7 +75,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
 
         // ---- ElevenLabs
         elevenBox.orientation = LinearLayout.VERTICAL
-        val k = Collapsible(act, "الربط", "مفتاح ElevenLabs (يبقى على هذا الهاتف)", true)
+        val k = Collapsible(act, "الربط", "مفتاح ElevenLabs: مشفّر ومحفوظ في حسابك", true)
         elKey = Ui.field(act, "xi-api-key", "", false, true, true)
         k.body.put(elKey)
         elevenBox.put(k)
@@ -104,7 +104,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
         m.body.put(stab.view, top = 14)
         m.body.put(sim.view, top = 10)
         elevenBox.put(m, top = 12)
-        elevenBox.put(Ui.ghostBtn(act, "▶  استمع إلى صوت ElevenLabs", Ui.CYAN, 13f, 12) { previewEleven() }, top = 12)
+        elevenBox.put(Ui.iconGhost(act, Ic.PLAY, "استمع إلى صوت ElevenLabs", Ui.CYAN, 13f, 12) { previewEleven() }, top = 12)
         elevenBox.put(
             Ui.text(act, "Gemini يفهم ويفكّر، ثم يُنطق ردّه بصوت ElevenLabs جملةً جملة، فقد يزيد التأخير قليلاً.", 12f, Ui.MUTED),
             top = 8
@@ -151,17 +151,18 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
             gain.set(c.outGain)
             filled = true
         }
-        if (elKey.text.isBlank()) elKey.setText(Prefs.get(act, "elevenKey"))
+        if (elKey.text.isBlank()) elKey.setText(Secrets.eleven(act))
+        VoicePreview.warm(Secrets.gemini(act))
         paintCards()
     }
 
     private fun preview(voice: String) {
-        val key = Prefs.get(act, "geminiKey")
+        val key = Secrets.gemini(act)
         if (key.isBlank()) {
             act.toast("أدخل مفتاح Gemini في الإعدادات")
             return
         }
-        state.text = "جارٍ تجهيز الصوت…"
+        state.text = "جارٍ الاتصال..."
         VoicePreview.gemini(act, key, voice) { s -> act.runOnUiThread { state.text = s } }
     }
 
@@ -178,7 +179,7 @@ class VoiceScreen(act: MainActivity) : Screen(act) {
     }
 
     private fun save() {
-        Prefs.put(act, "elevenKey", elKey.text.toString().trim())
+        Secrets.save(act, "eleven", elKey.text.toString().trim())
         val patch = JSONObject()
             .put("voice_provider", if (provider.index == 1) "elevenlabs" else "gemini")
             .put("voice", geminiVoice)

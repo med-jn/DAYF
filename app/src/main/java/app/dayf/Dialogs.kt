@@ -78,4 +78,24 @@ object Dialogs {
         }
         d.show()
     }
+
+    /** Single-choice list. `current` is highlighted. */
+    fun pick(a: Activity, title: String, items: List<String>, current: Int, onPick: (Int) -> Unit) {
+        val d = shell(a, title) { p, dlg ->
+            for (i in items.indices) {
+                val sel = i == current
+                val t = Ui.text(a, items[i], 15f, if (sel) Ui.BG else Ui.TEXT, true)
+                t.setPadding(Ui.dp(a, 14), Ui.dp(a, 13), Ui.dp(a, 14), Ui.dp(a, 13))
+                t.background = if (sel) Ui.shape(a, Ui.CYAN, 12) else Ui.shape(a, Ui.CARD2, 12, Ui.LINE)
+                t.isClickable = true
+                t.setOnClickListener {
+                    onPick(i)
+                    dlg.dismiss()
+                }
+                p.addView(t, Ui.lp(a, Ui.MATCH, Ui.WRAP, top = 8))
+            }
+            p.addView(Ui.ghostBtn(a, "إغلاق") { dlg.dismiss() }, Ui.lp(a, Ui.MATCH, Ui.WRAP, top = 14))
+        }
+        d.show()
+    }
 }

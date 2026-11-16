@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK + AAB
 
 on:
   push:
@@ -18,12 +18,24 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-      - name: Build debug APK (fixed signature)
+      - name: Prepare
+        run: chmod +x gradlew
+      - name: Optional upload key (only if the secrets exist)
+        env:
+          KS: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Build APK (sideload, fixed signature) and AAB (Google Play)
+        env:
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          gradle assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
+          ./gradlew assembleDebug bundleRelease --console=plain 2>&1 | tee build.log
       - name: Show errors (appears in the run Summary page)
         if: failure()
         run: |
@@ -33,15 +45,20 @@ jobs:
             grep -E '^e: |What went wrong|error:' -A2 build.log | head -80 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk TikGuest.apk
+      - name: Collect
+        run: |
+          mkdir -p dist
+          CODE=$(grep '^versionCode=' version.properties | cut -d= -f2)
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/TikGuest-1.0.$CODE.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/TikGuest-1.0.$CODE.aab"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: TikGuest-apk
-          path: TikGuest.apk
-      - name: Publish release (download straight from the phone)
+          name: TikGuest-1.0.${{ env.CODE }}
+          path: dist/*
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Tik Guest ${{ github.run_number }}
-          files: TikGuest.apk
+          tag_name: v1.0.${{ env.CODE }}-b${{ github.run_number }}
+          name: Tik Guest 1.0.${{ env.CODE }} (build ${{ github.run_number }})
+          files: dist/*

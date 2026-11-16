@@ -15,6 +15,8 @@ abstract class Screen(val act: MainActivity) {
     abstract val root: View
     open fun onShow() {}
     open fun tick() {}
+    open fun reset() {}
+    open fun onResume() {}
 
     protected fun dp(v: Int) = Ui.dp(act, v)
 
@@ -76,21 +78,14 @@ class StepperRow(
 object Readiness {
     class Item(val label: String, val optional: Boolean, val ok: Boolean)
 
-    fun a11y(c: Context): Boolean {
-        val s = Settings.Secure.getString(c.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        return s.contains(c.packageName)
-    }
-
     fun items(c: Context): List<Item> {
-        val keys = Prefs.get(c, "geminiKey").isNotBlank() && Prefs.get(c, "supaUrl").isNotBlank() && Prefs.get(c, "supaKey").isNotBlank()
         val mic = c.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         val battery = (c.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(c.packageName)
         return listOf(
+            Item("تسجيل الدخول", false, Auth.isSignedIn(c) && Repo.loaded),
+            Item("مفتاح Gemini", false, Secrets.gemini(c).isNotBlank()),
             Item("الظهور فوق التطبيقات", false, Settings.canDrawOverlays(c)),
             Item("صلاحية الميكروفون", false, mic),
-            Item("المفاتيح", false, keys),
-            Item("قاعدة البيانات", false, Repo.loaded),
-            Item("خدمة الإتاحة (اختيارية)", true, a11y(c)),
             Item("استثناء البطارية (يُنصح به)", true, battery)
         )
     }
@@ -98,8 +93,8 @@ object Readiness {
     fun missing(c: Context): List<String> = items(c).filter { !it.optional && !it.ok }.map { it.label }
 }
 
-fun statusDot(ctx: Context, ok: Boolean, optional: Boolean): TextView {
-    val t = Ui.text(ctx, if (ok) "✔" else if (optional) "○" else "✘", 16f, if (ok) Ui.GREEN else if (optional) Ui.AMBER else Ui.RED, true)
-    t.gravity = Gravity.CENTER
-    return t
+fun statusDot(ctx: Context, ok: Boolean, optional: Boolean): View {
+    val kind = if (ok) Ic.CHECK else if (optional) Ic.MINUS else Ic.CROSS
+    val color = if (ok) Ui.GREEN else if (optional) Ui.AMBER else Ui.RED
+    return IconView(ctx, kind, color)
 }

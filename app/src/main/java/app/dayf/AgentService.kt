@@ -66,7 +66,8 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private var rules: List<String> = emptyList()
     private var knowledge: List<Pair<String, String>> = emptyList()
     private var people: List<Pair<String, String>> = emptyList()
-    private var prevLines: List<String> = emptyList()
+    private var persona = ""
+    private var lastAgentLine = ""
     private var names: List<String> = emptyList()
     private val recent = java.util.ArrayDeque<String>()
 
@@ -85,8 +86,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private val yieldHits = java.util.ArrayDeque<Pair<Long, Int>>()
     private var inputSinceDecision = 0
     private var extrasOn = false
-    private var proactiveFailed = false
-    private var affectiveFailed = false
+    private val failedFeatures = HashSet<String>()
+    private var fastOn = false
+    @Volatile private var lastInputAt = 0L
+    @Volatile private var lastLatency = 0L
+    private var hostName = ""
+    private var hostGender = ""
+    private var sources: List<SourceInfo> = emptyList()
     private var proactiveOn = false
     private var affectiveOn = false
     private var setupDone = false
@@ -187,24 +193,27 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         try {
             var commands: List<String> = emptyList()
             if (!diag) {
-                gemKey = Prefs.get(this, "geminiKey")
-                val su = Prefs.get(this, "supaUrl")
-                val sk = Prefs.get(this, "supaKey")
-                if (gemKey.isBlank() || su.isBlank() || sk.isBlank()) return fail("أدخل مفتاح Gemini وبيانات Supabase أولاً.")
-                val s = Supa(su, sk)
+                gemKey = Secrets.gemini(this)
+                if (!Auth.isSignedIn(this)) return fail("سجّل الدخول أولاً.")
+                if (gemKey.isBlank()) return fail("أضف مفتاح Gemini من الإعدادات أولاً.")
+                val s = Supa(this)
                 supa = s
-                val raw = s.config()
-                if (raw != null) Prefs.put(this, "cfgCache", raw.toString())
-                val use = raw
-                    ?: Prefs.get(this, "cfgCache").takeIf { it.isNotBlank() }?.let { JSONObject(it) }
-                    ?: return fail("تعذّر قراءة الإعدادات من Supabase: ${s.lastError}")
-                val c = Cfg(use)
+                var pid = Repo.personaId
+                var raw: JSONObject? = if (Repo.loaded) Repo.raw else null
+                if (raw == null) {
+                    pid = s.ensureProfile() ?: return fail("تعذّر قراءة حسابك: ${s.lastError}")
+                    raw = s.persona(pid) ?: return fail("تعذّر قراءة الشخصية: ${s.lastError}")
+                }
+                persona = pid
+                val c = Cfg(raw)
                 cfg = c
-                rules = s.rules()
-                knowledge = s.knowledge()
+                rules = s.rules(pid)
+                knowledge = s.knowledge(pid)
                 host = Prefs.get(this, "host").ifBlank { "default" }
-                people = s.notes(host)
-                prevLines = s.recentTranscripts(host, 20)
+                hostName = Prefs.get(this, "host")
+                hostGender = Prefs.get(this, "hostGender").ifBlank { "male" }
+                sources = s.sourceInfos(pid)
+                people = if (c.storeMemory) s.notes(pid, host) else emptyList()
                 names = (listOf(c.name) + c.aliases.split(',', '،', '\n')).map { Ar.norm(it) }.filter { it.isNotBlank() }
                 model = c.model.ifBlank { LiveClient.pickModel(gemKey) ?: "" }
                 visionModel = c.visionModel.ifBlank { LiveClient.pickTextModel(gemKey) ?: "" }
@@ -215,12 +224,11 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                     SpeakMode.ON_CALL
                 }
                 StateBus.allowUnknown = c.allowUnknown
-                TikTokWatcher.keywords = Keywords.from(c.keywords)
                 commands = c.quickCommands
-                s.startSession(liveId, host)
-                AppLog.add("Supabase ✔ الوكيل «${c.name}» | قواعد ${rules.size} | معرفة ${knowledge.size} | أسماء النداء ${names.size} | نموذج $model")
+                AppLog.add("الشخصية «${c.name}» | قواعد ${rules.size} | معرفة ${knowledge.size} | مراجع ${sources.size} | أسماء النداء ${names.size} | نموذج $model")
             }
             main.post { overlay?.setCommands(commands) }
+            warmAudio()
 
             if (!diag) {
                 val p = AgentPlayer(this)
@@ -232,7 +240,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                     AppLog.add(m)
                     lastNote = m
                 }
-                v.configure(cfg!!, Prefs.get(this, "elevenKey"))
+                v.configure(cfg!!, Secrets.eleven(this))
                 v.start()
                 voice = v
                 AppLog.add("مزوّد الصوت: ${if (v.provider == "elevenlabs") "ElevenLabs" else "Gemini (${cfg!!.voice})"}")
@@ -270,16 +278,17 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private fun connectLive() {
         if (stopping) return
         val c = cfg ?: return
-        val recap = if (resumeHandle == null) (prevLines + recent.toList()).takeLast(40) else emptyList()
-        val sys = Prompt.system(c, rules, knowledge, people, recap)
+        val recap = if (resumeHandle == null) recent.toList().takeLast(40) else emptyList()
+        val sys = Prompt.system(c, rules, knowledge, people, recap, sources, hostName, hostGender)
         val client = LiveClient(gemKey, this)
         live = client
         setupDone = false
-        proactiveOn = c.proactiveAudio && !proactiveFailed
-        affectiveOn = c.affectiveDialog && !affectiveFailed
+        proactiveOn = c.proactiveAudio && "proactive" !in failedFeatures
+        affectiveOn = c.affectiveDialog && "affective" !in failedFeatures
+        fastOn = c.fastMode && "nothink" !in failedFeatures
         extrasOn = proactiveOn || affectiveOn
         client.connect(
-            Prompt.setup(model, c, sys, resumeHandle, proactiveOn, c.interruptPolicy == "always", affectiveOn),
+            Prompt.setup(model, c, sys, resumeHandle, proactiveOn, c.interruptPolicy == "always", affectiveOn, fastOn),
             extrasOn
         )
     }
@@ -287,6 +296,16 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private fun onCapture(pcm: ByteArray) {
         if (diag) return
         if (!StateBus.shouldListen()) return
+        if (MediaOut.playing) {
+            if (player?.hasWired() != true) return // speaker route: the mic would hear the clip itself (use the pause button)
+            if (MediaOut.bargeFeed(pcm)) { // the host started talking over the clip: pause it, the agent listens
+                val pos = MediaOut.pause()
+                if (pos >= 0) {
+                    AppLog.add("بثّ صوت: أُوقف تلقائياً عند ${MediaOut.mmss(pos)} لأن المتحدث بدأ يتكلم")
+                    live?.sendText("[حالة النظام] أوقفتُ الصوت مؤقتاً عند ${MediaOut.mmss(pos)} لأن المضيف بدأ يتكلم. استمع له وأجبه، ثم استأنف بـ resume_audio حين يطلب المتابعة. لا تعلّق على الإيقاف نفسه.")
+                }
+            }
+        }
         live?.sendAudio(pcm)
     }
 
@@ -296,7 +315,8 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             "Gemini Live جاهز" +
                 (if (proactiveOn) " • صمت ذكي" else "") +
                 (if (affectiveOn) " • حوار عاطفي" else "") +
-                (if (!extrasOn) " • الوضع الأساسي" else "")
+                (if (fastOn) " • وضع السرعة" else "") +
+                (if (!extrasOn && !fastOn) " • الوضع الأساسي" else "")
         )
         if (cfg?.screenMode != "manual") exec.execute { verifyNow("بداية الجلسة", false) }
         attempt = 0
@@ -307,8 +327,13 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     private fun decideTurn(now0: Long) {
         var now = now0
         if (!turnDecided && StateBus.mode != SpeakMode.SILENT && cfg?.screenMode == "on_demand" && !isFresh(now)) {
-            verifyNow("قبل الكلام", false)
-            now = System.currentTimeMillis()
+            if (StateBus.guestEff == GuestState.GUEST) {
+                // optimistic: never delay speech for a check; if it turns out we were removed, the speech is cut
+                exec.execute { verifyNow("قبل الكلام", false) }
+            } else {
+                verifyNow("قبل الكلام", false)
+                now = System.currentTimeMillis()
+            }
         }
         if (!turnDecided) {
             turnDecided = true
@@ -318,17 +343,25 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             if (why == null && heard < 3 && now > StateBus.forceUntil) why = "لا كلام مفهوم (ضجيج أو موسيقى)"
             turnAllowed = why == null
             if (why != null) StateBus.lastBlock = why
+            if (turnAllowed && lastInputAt > 0) {
+                val l = now - lastInputAt
+                if (l in 0..30000) {
+                    lastLatency = l
+                    AppLog.add("زمن الرد: $l م.ث")
+                }
+            }
         } else if (turnAllowed) {
             val why = StateBus.hardBlock(now, true)
             if (why != null) {
                 turnAllowed = false
                 StateBus.lastBlock = why
-                voice?.cancel()
+                cancelVoice()
             }
         }
     }
 
     override fun onAudio(pcm24k: ByteArray) {
+        if (MediaOut.playing) return // the agent stays silent while a clip is playing
         val now = System.currentTimeMillis()
         decideTurn(now)
         if (turnAllowed) {
@@ -361,7 +394,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         if (total >= c.yieldChars || stop || called) {
             yieldHits.clear()
             AppLog.add("تنازل عن الكلام: " + (if (stop) "طُلب منه التوقف" else if (called) "نودي باسمه" else "أحدهم أخذ الكلام"))
-            voice?.cancel()
+            cancelVoice()
             turnAllowed = false
             duckUntil = 0
             updateDuck(now)
@@ -369,6 +402,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     }
 
     override fun onInputText(t: String) {
+        lastInputAt = System.currentTimeMillis()
         inputSinceDecision += t.length
         maybeYield(t)
         synchronized(textLock) {
@@ -411,7 +445,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onInterrupted() {
         if (cfg?.interruptPolicy != "always") return
-        voice?.cancel()
+        cancelVoice()
         turnDecided = false
         turnAllowed = false
         spokenThisTurn = false
@@ -427,24 +461,35 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         if (o.isNotEmpty() && spokenThisTurn) remember("agent", o)
     }
 
+    /** Session memory only (RAM). What other people say is never written to disk or to the database. */
     private fun remember(role: String, text: String) {
         recent.addLast((if (role == "agent") "أنت: " else "الحاضرون: ") + text)
         while (recent.size > 40) recent.removeFirst()
-        val s = supa ?: return
-        try {
-            exec.execute { s.addTranscript(liveId, host, role, text) }
-        } catch (e: Exception) {
-        }
+        if (role == "agent") lastAgentLine = text
     }
 
     override fun onToolCall(id: String, name: String, args: JSONObject) {
         Thread {
-            val res = if (name == "look_at_screen") {
-                lookAtScreen(args.optString("reason"))
-            } else Tools.exec(supa, cfg, host, name, args)
+            val res = when (name) {
+                "look_at_screen" -> lookAtScreen(args.optString("reason"))
+                "play_audio", "stop_audio", "audio_status" -> audioTool(name, args)
+                else -> Tools.exec(supa, cfg, persona, host, name, args)
+            }
             live?.sendToolResponse(id, name, res)
         }.start()
     }
+
+
+    /** Never flush the shared player while a clip is playing through it. */
+    private fun cancelVoice() {
+        if (!MediaOut.playing) voice?.cancel()
+    }
+
+    private val audio = AudioTools(this, { supa }, { persona }, { player }, { live })
+
+    private fun audioTool(name: String, args: JSONObject): JSONObject = audio.handle(name, args)
+
+    private fun warmAudio() = audio.warm()
 
     override fun onResumeHandle(h: String) {
         resumeHandle = h
@@ -456,16 +501,21 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onClosed(code: Int, reason: String) {
         if (stopping) return
-        if (!setupDone && extrasOn && code != -1) {
-            val dropped = if (affectiveOn) "الحوار العاطفي" else "الصمت الذكي"
-            if (affectiveOn) affectiveFailed = true else proactiveFailed = true
+        if (!setupDone && (extrasOn || fastOn) && code != -1) {
+            val key = when {
+                affectiveOn -> "affective"
+                proactiveOn -> "proactive"
+                else -> "nothink"
+            }
+            val dropped = when (key) { "affective" -> "الحوار العاطفي"; "proactive" -> "الصمت الذكي"; else -> "وضع السرعة" }
+            failedFeatures.add(key)
             resumeHandle = null
             AppLog.add("$dropped غير مدعوم في هذا النموذج ($code): ${reason.take(140)} — إعادة الاتصال بدونه")
             main.postDelayed({ connectLive() }, 300)
             return
         }
         lastNote = "انقطع Gemini ($code) ${reason.take(80)}"
-        AppLog.add("انقطع Gemini Live ($code): ${reason.take(200)}")
+        AppLog.add("انقطع Gemini Live ($code): ${reason.take(200)}${UiState.toolHint()}")
         attempt++
         if (attempt > 10) {
             fail("تعذّر الاتصال بـ Gemini بعد عدة محاولات: $reason")
@@ -544,7 +594,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
             SpeakMode.ON_CALL -> 1
             SpeakMode.AUTO -> 2
         }
-        val footer = "Gemini: ${if (connected) "متصل" else "غير متصل"} • الإخراج: $route" +
+        val footer = (if (connected) "متصل" else "غير متصل") + " | " + route +
             (if (lastNote.isNotEmpty()) "\n$lastNote" else "")
         o.update(
             OverlayState(
@@ -554,8 +604,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
                 modeIdx,
                 StateBus.captureLevel * 3,
                 footer,
-                "ضيف: " + (StateBus.manualGuest?.ar ?: "تلقائي"),
-                "مايك: " + (StateBus.manualMic?.ar ?: "تلقائي")
+                "الحالة: " + (StateBus.manualGuest?.ar ?: "تلقائي"),
+                "المايك: " + (StateBus.manualMic?.ar ?: "تلقائي"),
+                ((player?.gain ?: 1f) * 100).toInt(),
+                if (lastLatency > 0) String.format(java.util.Locale.US, "%.1f", lastLatency / 1000.0) + " ث" else ""
             )
         )
     }
@@ -642,6 +694,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     // ---------------------------------------------------------------- panel actions
 
     override fun onStopSpeaking() {
+        MediaOut.stop()
         voice?.cancel()
         StateBus.silenceUntil = System.currentTimeMillis() + 30000
         turnAllowed = false
@@ -649,7 +702,10 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
 
     override fun onMode(m: SpeakMode) {
         StateBus.mode = m
-        if (m == SpeakMode.SILENT) voice?.cancel()
+        if (m == SpeakMode.SILENT) {
+            MediaOut.stop()
+            voice?.cancel()
+        }
         updateOverlay()
     }
 
@@ -681,22 +737,23 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         live?.sendText("[تعليمات المخرج] $text")
     }
 
-    override fun onVolume(delta: Float) {
-        val p = player ?: return
-        p.applyGain(p.gain + delta)
-        lastNote = "مستوى الصوت: ${(p.gain * 100).toInt()}%"
+    override fun onVolume(level: Float) {
+        player?.applyGain(level)
     }
 
-    override fun onDump() {
-        val sb = StringBuilder()
-        sb.append("guestEff=").append(StateBus.guestEff).append(" micEff=").append(StateBus.micEff)
-            .append(" a11y=").append(StateBus.a11yGuest).append('/').append(StateBus.a11yMic)
-            .append(" vision=").append(StateBus.visGuest).append('/').append(StateBus.visMic)
-            .append(" note=").append(lastNote).append('\n')
-        sb.append(TikTokWatcher.dump())
-        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        cm.setPrimaryClip(ClipData.newPlainText("dump", sb.toString().take(30000)))
-        Toast.makeText(this, "نُسخت بنية الشاشة. الصقها في المحادثة.", Toast.LENGTH_LONG).show()
+    override fun onReport() {
+        val text = lastAgentLine
+        if (text.isBlank()) {
+            Toast.makeText(this, "لا يوجد رد لإبلاغ عنه بعد", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val s = supa
+        exec.execute {
+            val ok = s?.addReport(persona, text, "inappropriate") ?: false
+            main.post {
+                Toast.makeText(this, if (ok) "تم إرسال البلاغ، شكراً" else "تعذّر إرسال البلاغ", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onVerify() {
@@ -729,6 +786,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
     // ---------------------------------------------------------------- shutdown
 
     private fun shutdown() {
+        MediaOut.notifyAgent = null
         if (stopping) return
         stopping = true
         running = false
@@ -737,6 +795,7 @@ class AgentService : Service(), LiveClient.Listener, Overlay.Actions {
         try { live?.close() } catch (e: Exception) { }
         try { capture?.stop() } catch (e: Exception) { }
         try { grabber?.stop() } catch (e: Exception) { }
+        try { MediaOut.stop() } catch (e: Exception) { }
         try { voice?.stop() } catch (e: Exception) { }
         try { player?.stop() } catch (e: Exception) { }
         try { projection?.stop() } catch (e: Exception) { }

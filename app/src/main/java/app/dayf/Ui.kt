@@ -79,7 +79,7 @@ object Ui {
         return g
     }
 
-    private fun ripple(base: Drawable): Drawable =
+    fun ripple(base: Drawable): Drawable =
         RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), base, null)
 
     /** Window background: black with faint cyan and red glows (the two halves of the logo). */
@@ -151,8 +151,28 @@ object Ui {
         return t
     }
 
+    fun iconPrimary(c: Context, icon: Ic, label: String, sp: Float = 15f, padV: Int = 13, onClick: () -> Unit): IconButton {
+        val b = IconButton(c, icon, label, TEXT, ripple(shape(c, RED, 14)), sp, padV)
+        b.setOnClickListener { onClick() }
+        return b
+    }
+
+    fun iconGhost(c: Context, icon: Ic, label: String, color: Int = TEXT, sp: Float = 13f, padV: Int = 10, onClick: () -> Unit): IconButton {
+        val b = IconButton(c, icon, label, color, ripple(shape(c, Color.TRANSPARENT, 14, LINE, 1)), sp, padV)
+        b.setOnClickListener { onClick() }
+        return b
+    }
+
+    fun iconSolid(c: Context, icon: Ic, label: String, fill: Int, fg: Int, sp: Float = 13f, padV: Int = 10, onClick: () -> Unit): IconButton {
+        val b = IconButton(c, icon, label, fg, ripple(shape(c, fill, 12)), sp, padV)
+        b.setOnClickListener { onClick() }
+        return b
+    }
+
     fun chip(c: Context, label: String, color: Int): TextView {
         val t = text(c, label, 12f, color, true)
+        t.isSingleLine = true
+        t.ellipsize = android.text.TextUtils.TruncateAt.END
         t.setPadding(dp(c, 11), dp(c, 5), dp(c, 11), dp(c, 5))
         t.background = shape(c, Color.argb(36, Color.red(color), Color.green(color), Color.blue(color)), 20)
         return t

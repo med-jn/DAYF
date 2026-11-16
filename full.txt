@@ -1,0 +1,220 @@
+--------- beginning of main
+11-14 15:43:31.117 D/connsyslogger( 1016): Open FIFO for close
+11-14 15:43:31.179 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:31.179 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [CONTACT contacts(370) data(3429) accounts({com.google (41)=15, com.google (42)=311, com.google.android.apps.tachyon (6)=89, com.whatsapp (38)=141, vnd.sec.contact.sim (2)=2, org.telegram.messenger (25)=72, org.telegram.messenger (9)=82}) accounts deleted({}) in_trash(in_trash(0), in_trash_for_sync(0)) calls([logtype:100 cnt:417, logtype:300 cnt:215]) countryIso(TN) userId(0)  ]
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [ agr({[9 ,25 ,42]=4, [9 ,25]=5, [42 ,25 ,6]=1, [9 ,25 ,38 ,6 ,42]=6, [9 ,25 ,42 ,6]=1, [9 ,25 ,38 ,42 ,6]=10, [42 ,38 ,6]=3, [42 ,25]=1, [9 ,25 ,42 ,38]=1, [9 ,38 ,6 ,42]=1, [42]=141, [9 ,38 ,42 ,6]=1, [38 ,6 ,41]=1, [9 ,42 ,38]=1, [25]=14, [38 ,42 ,6]=18, [42 ,42 ,38 ,6]=1, [42 ,38 ,9 ,6]=1, [38 ,42 ,6 ,6]=1, [38 ,42]=39, [25 ,38 ,42 ,6]=4, [9]=25, [41 ,6]=1, [9 ,42 ,6]=1, [38 ,9 ,25 ,42]=1, [38 ,25 ,42]=1, [38 ,41 ,6]=2, [9 ,42]=2, [9 ,38 ,42]=2, [38 ,9 ,42 ,6]=1, [42 ,38]=9, [42 ,6]=22, [25 ,38 ,42]=5, [41]=7, [41 ,38]=1, [42 ,2]=2, [42 ,6 ,38]=1, [38 ,6 ,42]=10, [38]=1, [9 ,25 ,38 ,42]=17, [38 ,41]=1, [41 ,9]=1, [25 ,42]=1, [9 ,38 ,41 ,6]=1})  ]
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [ actCnt({android.process.acore(15854)=1, com.whatsapp(10863)=1, com.samsung.android.scs(10608)=10})  ]
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [PROFILE contacts(0) data(0) accounts({})  ] [SAPROFILE contacts(1) data(1) accounts({vnd.sec.contact.phone (1)=1})  ]
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [STORAGE Contacts(CE) Profile(CE) SAProfile(CE) CallLog(CE)  ]
+11-14 15:43:31.291 I/ContactsProvider_EventLog(15854): contents_sample_state: [STATE R(F) ]
+11-14 15:43:32.394 I/WifiHAL (14877): Get link layer stats
+11-14 15:43:32.394 I/WifiHAL (14877): GetLinkStatsCommand::create
+11-14 15:43:32.394 D/android.hardware.wifi@1.0-service-lazy(14877): WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+11-14 15:43:32.394 I/android.hardware.wifi@1.0-service-lazy(14877): WifiCommand::requestResponse err=-95
+11-14 15:43:32.394 I/WifiHAL (14877): wifi_get_link_stats: result=-3
+11-14 15:43:32.395 E/WifiVendorHal(14587): $r8$lambda$s6w0pmKyq6-tDdqCEDbOV_xqgVE(l.1191) failed {.code = ERROR_NOT_SUPPORTED, .description = }
+--------- beginning of system
+11-14 15:43:32.693 I/wpa_supplicant(30401): Heartbeat 130
+11-14 15:43:32.757 I/NearbyMediums(27445): No BLE Fast/GATT advertisements found in the latest cycle.
+11-14 15:43:32.757 I/NearbyMediums(27445): Current Tracked Scanning Clients are : {NearbyConnections.EnvironmentMonitor, NearbySharing, NearbyConnections.TxAdvertisement}
+11-14 15:43:33.011 D/connsyslogger( 1016): idx=0 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:33.011 D/connsyslogger( 1016): idx=1 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:33.011 D/connsyslogger( 1016): idx=2 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:33.011 D/connsyslogger( 1016): idx=3 Bootup Log: 1 log files! filecount=5 
+11-14 15:43:33.013 I/connsyslogger( 1016): thrLogWriter: LogBuf=226.937500KB,idx=1
+11-14 15:43:33.035 D/BatteryDump(  777): wait_for_battery_event : occurred : change@/devices/platform/samsung_mobile_device/samsung_mobile_device:battery/power_supply/battery 
+11-14 15:43:33.039 E/android.hardware.health@2.1-service-samsung(  777): Could not open /sys/class/power_supply/battery/lrp
+11-14 15:43:33.040 D/BatteryService(14587): Sending ACTION_BATTERY_CHANGED. scale:100, info:{.chargerAcOnline = true, .chargerUsbOnline = false, .chargerWirelessOnline = false, .maxChargingCurrent = 0, .maxChargingVoltage = 0, .batteryStatus = CHARGING, .batteryHealth = GOOD, .batteryPresent = true, .batteryLevel = 58, .batteryVoltage = 3924, .batteryTemperature = 299, .batteryCurrent = 380, .batteryCycleCount = 0, .batteryFullCharge = 5000000, .batteryChargeCounter = 2900000, .batteryTechnology = Li-ion}
+11-14 15:43:33.040 D/BatteryService(14587): online:3, current avg:339, charge type:1, POGO powered:false, power sharing:false, high voltage charger:true, charger_type:1, capacity:280000, misc_event:0xf0000, current_event:0x40008000, current_now:380
+11-14 15:43:33.042 D/MotionRecognitionService(14587): [SAR]  onReceive : ACTION_BATTERY_CHANGED, Plugged: 1
+11-14 15:43:33.042 I/MotionRecognitionService(14587): [TA] In/out: true, curr state: 1
+11-14 15:43:33.042 D/PhoneWindowManagerExt(14587): ACTION_BATTERY_CHANGED - Level=58, status=2
+11-14 15:43:33.042 D/SemWifiApBroadcastReceiver(14587): Received : android.intent.action.BATTERY_CHANGED
+11-14 15:43:33.043 D/AdaptiveBrightnessLongtermModelBuilder(14587): Received android.intent.action.BATTERY_CHANGED
+11-14 15:43:33.043 D/SemBigDataInfoController(14933): Intent : android.intent.action.BATTERY_CHANGED
+11-14 15:43:33.043 D/KeyguardUpdateMonitor(14961): received broadcast android.intent.action.BATTERY_CHANGED
+11-14 15:43:33.044 D/SemBigDataInfoController(14933): Intent : android.intent.action.BATTERY_CHANGED
+11-14 15:43:33.046 I/PowerUI (14961): mBootCompleted = true |  mFullyConnected = true
+11-14 15:43:33.046 I/PowerUI (14961): BATTERY_HEALTH_CHECK extraHealth=2 mBatteryMiscEvent=983040
+11-14 15:43:33.046 D/PowerUI (14961): priorPlugType = 1 mPlugType = 1 priorBatteryStatus = 2 mBatteryStatus = 2
+11-14 15:43:33.046 I/PowerUI (14961): oldMisalign : false, curMisalign : false
+11-14 15:43:33.047 D/PowerUI.Notification(14961): showChargingNotice oldChargingType : 2 currentChargingType : 2 oldChargingTime : 13090000 mChargingTime : 13058000
+11-14 15:43:33.048 D/PowerUI.Notification(14961): showChargingNotification()
+11-14 15:43:33.048 D/PowerUI.Notification(14961): 1. restoreScreenTimeOut - saved_value : :
+11-14 15:43:33.048 E/PowerUI.Notification(14961): no saved value, so we do nothing !!
+11-14 15:43:33.052 D/ApplicationPolicy(14587): isStatusBarNotificationAllowedAsUser: packageName = com.android.systemui,userId = 0
+11-14 15:43:33.052 D/ApplicationPolicy(14587): isStatusBarNotificationAllowedAsUser: packageName = com.android.systemui,userId = -1
+11-14 15:43:33.052 D/ApplicationPolicy(14587): isStatusBarNotificationAllowedAsUser: converting userId from USER_ALLto 0
+11-14 15:43:33.053 D/PowerUI (14961): Battery swelling mode - priorBatterySwellingMode = 0 mBatterySwellingMode = 0 mBatteryStatus = 2
+11-14 15:43:33.053 I/PowerUI (14961): mBatteryMiscEvent = 983040
+11-14 15:43:33.053 D/KeyguardUpdateMonitor(14961): handleBatteryUpdate
+11-14 15:43:33.056 D/KeyguardSecIndicationController(14961): addIndicationTimeout() returned - unlocking
+11-14 15:43:33.056 D/KeyguardSecIndicationController(14961): addIndication() returned - unlocking
+11-14 15:43:33.056 D/KeyguardSecIndicationController(14961): addBatteryIndication() status = BatteryStatus{status=2,level=58,plugged=1,health=2,maxChargingWattage=-1,remaining=13058000ultraFastCharger=1}
+11-14 15:43:33.059 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.061 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.061 V/SecQSFragmentAnimatorBase(14961): setQsExpansionPosition 0.0
+11-14 15:43:33.061 V/QsExpandAnimator(14961): setQsExpansionPosition 0.0 0
+11-14 15:43:33.062 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.064 D/IndicatorGardenInputProperty(14961): updateRotation() prv:-1 >> new:0
+11-14 15:43:33.064 D/DeviceState(14961): getDeviceResolutionPixelSize - currentDensity = 480 deviceDensity = 480 initialDisplaySizeFactor = 1080 currentDisplaySizeFactor = 1080 initialDisplayDensity = 420 proportionalDensity = 420 proportionalPixel = 84
+11-14 15:43:33.064 D/DeviceState(14961): getDeviceResolutionPixelSize - currentDensity = 480 deviceDensity = 480 initialDisplaySizeFactor = 1080 currentDisplaySizeFactor = 1080 initialDisplayDensity = 420 proportionalDensity = 420 proportionalPixel = 0
+11-14 15:43:33.065 D/DeviceState(14961): getDeviceResolutionPixelSize - currentDensity = 480 deviceDensity = 480 initialDisplaySizeFactor = 1080 currentDisplaySizeFactor = 1080 initialDisplayDensity = 420 proportionalDensity = 420 proportionalPixel = 0
+11-14 15:43:33.065 W/NotificationHistory(14587): Attempted to add notif for locked/gone/disabled user 0
+11-14 15:43:33.066 W/Looper  (14961): Slow dispatch took 10ms main h=android.view.Choreographer$FrameHandler c=android.view.Choreographer$FrameDisplayEventReceiver@10bd935 m=0
+11-14 15:43:33.066 I/AODBatteryManager(14961): updateBatteryData: ACTION_BATTERY_CHANGED
+11-14 15:43:33.068 I/AODBatteryManager(14961): saveBatteryData : AOD BatteryData [mBatteryLevel=58, mBatteryStatus=CHARGING, mBatteryPlugType=AC, mBatteryPlugged=true, mRemainingChargeTime=13058000, mBatteryChargingType=2, mBatteryChargerType=FAST, mBatteryOnline=TA, mBatterySwellingMode=NONE, mBatteryProtectMode=false]
+11-14 15:43:33.068 I/ChargingInfoManager(14961): updateChargingInfo: newState = AOD ChargingInfo [mState=BATTERY_AND_REMAIN_TIME, mIsCharging=true, mIsFullyCharged=false, mIsBatteryProtectMode=false], oldState = AOD ChargingInfo [mState=BATTERY_AND_REMAIN_TIME, mIsCharging=true, mIsFullyCharged=false, mIsBatteryProtectMode=false]
+11-14 15:43:33.068 W/Looper  (14961): Slow delivery took 22ms main h=android.app.ActivityThread$H c=android.app.LoadedApk$ReceiverDispatcher$Args$$ExternalSyntheticLambda0@ca30575 m=0
+11-14 15:43:33.068 W/Looper  (14961): Drained
+11-14 15:43:33.068 I/Launcher.NotificationListener(15373): onNotificationPosted : com.android.systemui number : 0
+11-14 15:43:33.069 I/Edge.badge(21251): updateBadge item = com.android.systemui:-1 1
+11-14 15:43:33.069 D/InterruptionStateProvider(14961): No bubble up: not allowed to bubble: -1|com.android.systemui|2131428820|charging_state|10043
+11-14 15:43:33.071 D/InterruptionStateProvider(14961):  no Heads up : edgelighting enabled app. -1|com.android.systemui|2131428820|charging_state|10043
+11-14 15:43:33.075 D/PeopleSpaceWidgetMgr(14961): Sbn doesn't contain valid PeopleTileKey: null/-1/com.android.systemui
+11-14 15:43:33.077 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.078 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.088 I/BufferQueueProducer(  807): [StatusBar$_14961#0](this:0xb400007ab5d84948,id:-1,api:0,p:-1,c:807) queueBuffer: fps=0.14 dur=7316.91 max=7316.91 min=7316.91
+11-14 15:43:33.101 I/BufferQueueProducer(  807): [FramebufferSurface](this:0xb400007ab5c796e0,id:-1,api:1,p:807,c:807) queueBuffer: fps=0.14 dur=7314.95 max=7314.95 min=7314.95
+11-14 15:43:33.102 I/hwcomposer(  776): [HWCDisplay] [Display_0 (type:1)] fps:0.136709,dur:7314.81,max:7314.81,min:7314.81  
+11-14 15:43:33.105 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704079, screenshot (Wallpaper BBQ wrapper#0)
+11-14 15:43:33.105 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704079, screenshot (com.sec.android.app.launcher/com.sec.android.app.launcher.activities.LauncherActivity$_15373#0)
+11-14 15:43:33.106 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704079, screenshot (Dim Layer for - WindowedMagnification:0:31#0)
+11-14 15:43:33.106 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704079, screenshot (com.samsung.android.lool/com.samsung.android.sm.iafd.dialog.AppErrorDialogActivity$_10757#0)
+11-14 15:43:33.141 W/Looper  (14961): Slow dispatch took 20ms main h=android.os.AsyncTask$InternalHandler c=null m=1
+11-14 15:43:33.144 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.145 D/QS      (14961): setQSExpansion 0.0 -148.75
+11-14 15:43:33.180 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:33.180 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:33.206 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704080, screenshot (Wallpaper BBQ wrapper#0)
+11-14 15:43:33.207 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704080, screenshot (com.sec.android.app.launcher/com.sec.android.app.launcher.activities.LauncherActivity$_15373#0)
+11-14 15:43:33.207 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704080, screenshot (Dim Layer for - WindowedMagnification:0:31#0)
+11-14 15:43:33.207 I/SurfaceFlinger(  807): operator()(), mtkRenderCntDebug 1704080, screenshot (com.samsung.android.lool/com.samsung.android.sm.iafd.dialog.AppErrorDialogActivity$_10757#0)
+11-14 15:43:34.342 I/SDHMS:C (16478): SIOP:: AP:216(306,100) BAT:299(299,0) USB:0(0,0) CHG:345(345,0) PA:315(315,0) WIFI:312(312,0) BLK:0(0,0) SUBBAT:0(0,0) LRP:319(319,0) LRF:316(316) LRB:319(319) 
+11-14 15:43:34.348 D/SemWifiP2pService(14587): GopsReceiver : received : com.samsung.intent.action.CHECK_SIOP_LEVEL
+11-14 15:43:34.348 I/SystemBroadcastReceiver(22734): [#CMH#] onReceive completed :  0
+11-14 15:43:34.348 I/SemWifiP2pService(14587): siop_level = -3
+11-14 15:43:34.348 I/a       (22734): [#CMH#] onReceive action = EVENT_SIOP
+11-14 15:43:34.349 D/SemWifiP2pService(14587): GopsReceiver : received : com.samsung.intent.action.CHECK_SIOP_LEVEL time : 1ms
+11-14 15:43:34.351 D/SensorService(14587): Calling batch handle==5 flags=0 rate=200000000 timeout== 0
+11-14 15:43:34.351 I/SensorsHub(  780): batch: handle=5 period=200000000 timeout=0
+11-14 15:43:34.352 I/SensorsHub(  780): activate: handle 5 enable 1
+11-14 15:43:34.352 I/SensorsHub(  780): type : 5, enable : 1
+11-14 15:43:34.431 I/SensorsHub(  780): LightSensor: lux = 0, time = 428220453436741
+11-14 15:43:34.832 E/audit   (  739): type=1400 audit(1794667414.828:97035): avc:  denied  { write } for  pid=27445 comm="PerfettoTrace" name="traced_producer" dev="tmpfs" ino=22197 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:traced_producer_socket:s0 tclass=sock_file permissive=0 SEPF_SM-A315F_12_0001 audit_filtered
+11-14 15:43:34.832 E/audit   (  739): type=1300 audit(1794667414.828:97035): arch=c00000b7 syscall=203 success=no exit=-13 a0=69 a1=7200285bc0 a2=1e a3=ffffffff950b6af6 items=0 ppid=14384 pid=27445 auid=4294967295 uid=10212 gid=10212 euid=10212 suid=10212 fsuid=10212 egid=10212 sgid=10212 fsgid=10212 tty=(none) ses=4294967295 comm="PerfettoTrace" exe="/system/bin/app_process64" subj=u:r:gmscore_app:s0:c512,c768 key=(null)
+11-14 15:43:34.832 E/audit   (  739): type=1327 audit(1794667414.828:97035): proctitle="com.google.android.gms"
+11-14 15:43:34.842 D/io_stats(  541): !@ 179,0 r 71254071 1563875909 w 4684797 115869860 d 2673382 106573192 f 2881236 3413356 iot 21888592 20755423 th 102400 102400 77332 pt 12112 inp 1 4 253581.284
+11-14 15:43:35.181 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:35.181 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:35.185 I/SemWifiServiceDetector(14587): Traff. tracking resumed
+11-14 15:43:35.410 I/WifiHAL (14877): Get link layer stats
+11-14 15:43:35.410 I/WifiHAL (14877): GetLinkStatsCommand::create
+11-14 15:43:35.410 D/android.hardware.wifi@1.0-service-lazy(14877): WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+11-14 15:43:35.410 I/android.hardware.wifi@1.0-service-lazy(14877): WifiCommand::requestResponse err=-95
+11-14 15:43:35.410 I/WifiHAL (14877): wifi_get_link_stats: result=-3
+11-14 15:43:35.412 E/WifiVendorHal(14587): $r8$lambda$s6w0pmKyq6-tDdqCEDbOV_xqgVE(l.1191) failed {.code = ERROR_NOT_SUPPORTED, .description = }
+11-14 15:43:35.723 D/SemNscXgbMsL1(14587): Probability - Cloud gaming: [0.025784612]
+11-14 15:43:35.724 D/SemNscXgbMsL1(14587): Probability - Real time: [0.31083295]
+11-14 15:43:35.724 D/SemNscXgbMsL1(14587): Probability - Non real time: [0.83779144]
+11-14 15:43:35.724 D/SemNscXgbMsL1(14587): 1 sample inference time: 1.299692 msecs
+11-14 15:43:35.726 D/SemNscXgbL2Rt(14587): L2 RT 1 sample inference time: 1.869154 msecs
+11-14 15:43:35.728 D/SemNscXgbL2Nrt(14587): L2 NRT 1 sample inference time: 1.246769 msecs
+11-14 15:43:36.118 D/connsyslogger( 1016): Open FIFO for close
+11-14 15:43:36.230 D/SemNscXgbMsL1(14587): Probability - Cloud gaming: [0.014962349]
+11-14 15:43:36.231 D/SemNscXgbMsL1(14587): Probability - Real time: [0.10295341]
+11-14 15:43:36.231 D/SemNscXgbMsL1(14587): Probability - Non real time: [0.68720466]
+11-14 15:43:36.231 D/SemNscXgbMsL1(14587): 1 sample inference time: 1.078769 msecs
+11-14 15:43:36.233 D/SemNscXgbL2Rt(14587): L2 RT 1 sample inference time: 1.765846 msecs
+11-14 15:43:36.234 D/SemNscXgbL2Nrt(14587): L2 NRT 1 sample inference time: 1.296923 msecs
+11-14 15:43:36.355 D/SensorService(14587): Calling activate off 5
+11-14 15:43:36.356 I/SensorsHub(  780): activate: handle 5 enable 0
+11-14 15:43:36.356 I/SensorsHub(  780): type : 5, enable : 0
+11-14 15:43:36.358 W/System.err(16478): java.lang.NumberFormatException: For input string: "FAIL"
+11-14 15:43:36.359 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:779)
+11-14 15:43:36.359 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:895)
+11-14 15:43:36.359 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker.getSensorValue(:407)
+11-14 15:43:36.359 W/System.err(16478): 	at D1.a1.run(:20)
+11-14 15:43:36.359 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker$2.run(:80)
+11-14 15:43:36.359 W/System.err(16478): 	at android.os.Handler.handleCallback(Handler.java:938)
+11-14 15:43:36.359 W/System.err(16478): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-14 15:43:36.359 W/System.err(16478): 	at android.os.Looper.loopOnce(Looper.java:226)
+11-14 15:43:36.359 W/System.err(16478): 	at android.os.Looper.loop(Looper.java:313)
+11-14 15:43:36.359 W/System.err(16478): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-14 15:43:36.360 W/System.err(16478): java.lang.NumberFormatException: For input string: "FAIL"
+11-14 15:43:36.360 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:779)
+11-14 15:43:36.360 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:895)
+11-14 15:43:36.360 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker.getSensorValue(:407)
+11-14 15:43:36.360 W/System.err(16478): 	at D1.a1.run(:32)
+11-14 15:43:36.360 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker$2.run(:80)
+11-14 15:43:36.360 W/System.err(16478): 	at android.os.Handler.handleCallback(Handler.java:938)
+11-14 15:43:36.360 W/System.err(16478): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-14 15:43:36.360 W/System.err(16478): 	at android.os.Looper.loopOnce(Looper.java:226)
+11-14 15:43:36.360 W/System.err(16478): 	at android.os.Looper.loop(Looper.java:313)
+11-14 15:43:36.360 W/System.err(16478): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-14 15:43:36.360 W/System.err(16478): java.lang.NumberFormatException: For input string: "FAIL"
+11-14 15:43:36.360 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:779)
+11-14 15:43:36.361 W/System.err(16478): 	at java.lang.Integer.parseInt(Integer.java:895)
+11-14 15:43:36.361 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker.getSensorValue(:407)
+11-14 15:43:36.361 W/System.err(16478): 	at D1.a1.run(:48)
+11-14 15:43:36.361 W/System.err(16478): 	at com.sec.android.sdhms.thermal.overheatcontrol.OverheatSensorChecker$2.run(:80)
+11-14 15:43:36.361 W/System.err(16478): 	at android.os.Handler.handleCallback(Handler.java:938)
+11-14 15:43:36.361 W/System.err(16478): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-14 15:43:36.361 W/System.err(16478): 	at android.os.Looper.loopOnce(Looper.java:226)
+11-14 15:43:36.361 W/System.err(16478): 	at android.os.Looper.loop(Looper.java:313)
+11-14 15:43:36.361 W/System.err(16478): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-14 15:43:36.387 D/SGM:GameManager(14587): identifyForegroundApp. com.samsung.android.lool, mCurrentUserId: 0, callerUserId: 0
+11-14 15:43:36.387 D/SGM:PkgDataHelper(14587): getGamePkgData(). com.samsung.android.lool
+11-14 15:43:36.388 I/a       (22734): [#CMH#] Is foreground game app: false
+11-14 15:43:36.637 D/[BT]    (  767): mtk_bt_op: BT_VND_OP_LPM_WAKE_SET_STATE
+11-14 15:43:36.657 D/connsyslogger( 1016): idx=0 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:36.658 D/connsyslogger( 1016): idx=1 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:36.658 D/connsyslogger( 1016): idx=2 Bootup Log: 4 log files! filecount=5 
+11-14 15:43:36.658 D/connsyslogger( 1016): idx=3 Bootup Log: 1 log files! filecount=5 
+11-14 15:43:36.659 I/connsyslogger( 1016): thrLogWriter: LogBuf=225.953125KB,idx=1
+11-14 15:43:36.737 D/SemNscXgbMsL1(14587): Probability - Cloud gaming: [0.025316257]
+11-14 15:43:36.737 D/SemNscXgbMsL1(14587): Probability - Real time: [0.15605749]
+11-14 15:43:36.738 D/SemNscXgbMsL1(14587): Probability - Non real time: [0.8447128]
+11-14 15:43:36.738 D/SemNscXgbMsL1(14587): 1 sample inference time: 1.083385 msecs
+11-14 15:43:36.740 D/SemNscXgbL2Rt(14587): L2 RT 1 sample inference time: 1.761231 msecs
+11-14 15:43:36.741 D/SemNscXgbL2Nrt(14587): L2 NRT 1 sample inference time: 1.356231 msecs
+11-14 15:43:36.851 D/io_stats(  541): !@ 179,0 r 71254072 1563875913 w 4684803 115870336 d 2673382 106573192 f 2881236 3413356 iot 21888600 20755434 th 102400 102400 77332 pt 12112 inp 0 0 253583.291
+11-14 15:43:37.182 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:37.182 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:37.244 D/SemNscXgbMsL1(14587): Probability - Cloud gaming: [0.025555613]
+11-14 15:43:37.244 D/SemNscXgbMsL1(14587): Probability - Real time: [0.30167857]
+11-14 15:43:37.244 D/SemNscXgbMsL1(14587): Probability - Non real time: [0.81086093]
+11-14 15:43:37.244 D/SemNscXgbMsL1(14587): 1 sample inference time: 0.911693 msecs
+11-14 15:43:37.246 D/SemNscXgbL2Rt(14587): L2 RT 1 sample inference time: 1.592 msecs
+11-14 15:43:37.247 D/SemNscXgbL2Nrt(14587): L2 NRT 1 sample inference time: 1.045461 msecs
+11-14 15:43:37.750 D/SemNscXgbMsL1(14587): Probability - Cloud gaming: [0.018681893]
+11-14 15:43:37.750 D/SemNscXgbMsL1(14587): Probability - Real time: [0.10814569]
+11-14 15:43:37.751 D/SemNscXgbMsL1(14587): Probability - Non real time: [0.7773322]
+11-14 15:43:37.751 D/SemNscXgbMsL1(14587): 1 sample inference time: 1.110077 msecs
+11-14 15:43:37.753 D/SemNscXgbL2Rt(14587): L2 RT 1 sample inference time: 1.760615 msecs
+11-14 15:43:37.754 D/SemNscXgbL2Nrt(14587): L2 NRT 1 sample inference time: 1.271384 msecs
+11-14 15:43:38.191 I/SemWifiServiceDetector(14587): Traff. tracking suspended
+11-14 15:43:38.427 I/WifiHAL (14877): Get link layer stats
+11-14 15:43:38.427 I/WifiHAL (14877): GetLinkStatsCommand::create
+11-14 15:43:38.427 D/android.hardware.wifi@1.0-service-lazy(14877): WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+11-14 15:43:38.427 I/android.hardware.wifi@1.0-service-lazy(14877): WifiCommand::requestResponse err=-95
+11-14 15:43:38.427 I/WifiHAL (14877): wifi_get_link_stats: result=-3
+11-14 15:43:38.429 E/WifiVendorHal(14587): $r8$lambda$s6w0pmKyq6-tDdqCEDbOV_xqgVE(l.1191) failed {.code = ERROR_NOT_SUPPORTED, .description = }
+11-14 15:43:39.182 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:39.183 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:40.729 D/[BT]    (  767): mtk_bt_op: BT_VND_OP_LPM_WAKE_SET_STATE
+11-14 15:43:40.733 W/bt_btm_ble(27571): SetRandAddr : xx:xx:xx:xx:d4:d9
+11-14 15:43:40.868 D/io_stats(  541): !@ 179,0 r 71254107 1563876165 w 4684808 115870580 d 2673382 106573192 f 2881236 3413356 iot 21888604 20755444 th 102400 102400 77332 pt 12112 inp 0 0 253587.308
+11-14 15:43:41.118 D/connsyslogger( 1016): Open FIFO for close
+11-14 15:43:41.183 D/connsyslogger( 1016): SD_LOG_ROOT is /data/debuglogger/connsyslog/fw.
+11-14 15:43:41.183 D/connsyslogger( 1016): systemReady:1
+11-14 15:43:41.446 I/WifiHAL (14877): Get link layer stats
+11-14 15:43:41.446 I/WifiHAL (14877): GetLinkStatsCommand::create
+11-14 15:43:41.446 D/android.hardware.wifi@1.0-service-lazy(14877): WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+11-14 15:43:41.446 I/android.hardware.wifi@1.0-service-lazy(14877): WifiCommand::requestResponse err=-95
+11-14 15:43:41.446 I/WifiHAL (14877): wifi_get_link_stats: result=-3
+11-14 15:43:41.447 E/WifiVendorHal(14587): $r8$lambda$s6w0pmKyq6-tDdqCEDbOV_xqgVE(l.1191) failed {.code = ERROR_NOT_SUPPORTED, .description = }
+11-14 15:43:41.468 D/UsbStatsMonitor(14587): 0 0 125932 0 1094 0 0 0 0 1094 0 34 0 1094 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 514 0 0 0 0
+11-14 15:43:41.757 D/IpClient/wlan0(15150): interfaceLinkStateChanged: ifindex 40 up
+11-14 15:43:42.580 I/adbd    (15852): adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d' '-v' 'time''

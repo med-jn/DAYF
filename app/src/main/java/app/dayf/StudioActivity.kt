@@ -32,6 +32,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
     @Volatile private var running = false
     @Volatile private var halfDuplex = true
     private var supa: Supa? = null
+    private val audio = AudioTools(this, { supa }, { Repo.personaId }, { player }, { live })
     private var cfg: Cfg? = null
     private var curUser: TextView? = null
     private var curAgent: TextView? = null
@@ -64,11 +65,12 @@ class StudioActivity : Activity(), LiveClient.Listener {
 
         val c = Repo.cfg()
         val info = if (c.voiceProvider == "elevenlabs") "ElevenLabs • ${if (c.elevenActive == 2) c.elevenName2 else c.elevenName1}" else "Gemini • ${c.voice}"
-        val chips = LinearLayout(this)
-        chips.orientation = LinearLayout.HORIZONTAL
+        // chips wrap onto a new row when the line is full: they are never squeezed into broken letters
+        val chips = FlowLayout(this)
+        chips.layoutDirection = View.LAYOUT_DIRECTION_RTL
         chips.addView(Ui.chip(this, c.name, Ui.CYAN))
-        chips.addView(Ui.chip(this, info, Ui.BLUE), Ui.lp(this, Ui.WRAP, Ui.WRAP, start = 8))
-        chips.addView(Ui.chip(this, c.dialect, Ui.GREEN), Ui.lp(this, Ui.WRAP, Ui.WRAP, start = 8))
+        chips.addView(Ui.chip(this, info, Ui.BLUE))
+        chips.addView(Ui.chip(this, c.dialect, Ui.GREEN))
         root.put(chips, top = 4)
 
         transcript = LinearLayout(this)
@@ -84,6 +86,12 @@ class StudioActivity : Activity(), LiveClient.Listener {
         status = Ui.text(this, "جاهز", 13f, Ui.MUTED)
         status.gravity = Gravity.CENTER
         root.put(status, top = 4)
+        pauseBtn = Ui.iconSolid(this, Ic.PAUSE, "إيقاف الصوت مؤقتاً", Ui.CYAN, Ui.BG, 14f, 12) { MediaOut.toggleByUser() }
+        resumeBtn = Ui.iconSolid(this, Ic.PLAY, "متابعة الصوت", Ui.GREEN, Ui.BG, 14f, 12) { MediaOut.toggleByUser() }
+        root.put(pauseBtn, top = 8)
+        root.put(resumeBtn, top = 8)
+        MediaOut.listeners.add(mediaListener)
+        refreshMedia()
         power = PowerButton(this)
         power.setOnClickListener { if (running) stopSession() else startSession() }
         val pr = LinearLayout(this)
@@ -91,6 +99,15 @@ class StudioActivity : Activity(), LiveClient.Listener {
         pr.addView(power, LinearLayout.LayoutParams(dp(150), dp(150)))
         root.put(pr, top = 6)
         setContentView(root)
+    }
+
+    private lateinit var pauseBtn: View
+    private lateinit var resumeBtn: View
+    private val mediaListener: () -> Unit = { runOnUiThread { refreshMedia() } }
+
+    private fun refreshMedia() {
+        pauseBtn.visibility = if (MediaOut.playing) View.VISIBLE else View.GONE
+        resumeBtn.visibility = if (MediaOut.paused) View.VISIBLE else View.GONE
     }
 
     // ------------------------------------------------------------ bubbles
@@ -122,7 +139,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), reqMic)
             return
         }
-        val key = Prefs.get(this, "geminiKey")
+        val key = Secrets.gemini(this)
         if (key.isBlank()) {
             status.text = "أدخل مفتاح Gemini في الإعدادات"
             return
@@ -135,13 +152,13 @@ class StudioActivity : Activity(), LiveClient.Listener {
             try {
                 val s = Repo.supa(this)
                 supa = s
-                val raw = if (Repo.raw.length() > 0) Repo.raw else s?.config() ?: JSONObject()
-                val c = Cfg(raw)
+                val pid = Repo.personaId
+                val c = Cfg(Repo.raw)
                 cfg = c
-                val rules = s?.rules() ?: emptyList()
-                val knowledge = s?.knowledge() ?: emptyList()
+                val rules = if (s != null && pid.isNotBlank()) s.rules(pid) else emptyList()
+                val knowledge = if (s != null && pid.isNotBlank()) s.knowledge(pid) else emptyList()
                 val host = Prefs.get(this, "host").ifBlank { "default" }
-                val people = s?.notes(host) ?: emptyList()
+                val people = if (s != null && pid.isNotBlank() && c.storeMemory) s.notes(pid, host) else emptyList()
                 val model = c.model.ifBlank { Repo.liveModel.ifBlank { LiveClient.pickModel(key) ?: "" } }
                 if (model.isBlank()) {
                     fail("لا يوجد نموذج Live لمفتاحك")
@@ -155,13 +172,15 @@ class StudioActivity : Activity(), LiveClient.Listener {
                 halfDuplex = !p.hasWired()
                 val v = VoiceOut(p)
                 v.onError = { m -> runOnUiThread { addNote(m) } }
-                v.configure(c, Prefs.get(this, "elevenKey"))
+                v.configure(c, Secrets.eleven(this))
                 v.start()
                 voice = v
-                val sys = Prompt.system(c, rules, knowledge, people, emptyList())
+                val srcs = if (s != null && pid.isNotBlank()) s.sourceInfos(pid) else emptyList()
+                val sys = Prompt.system(c, rules, knowledge, people, emptyList(), srcs, Prefs.get(this, "host"), Prefs.get(this, "hostGender").ifBlank { "male" })
                 val client = LiveClient(key, this)
                 live = client
                 client.connect(Prompt.setup(model, c, sys, null, false, !halfDuplex))
+                audio.warm()
             } catch (e: Exception) {
                 fail("خطأ: ${e.message}")
             }
@@ -171,13 +190,14 @@ class StudioActivity : Activity(), LiveClient.Listener {
     private fun fail(m: String) {
         AppLog.add("استوديو: $m")
         runOnUiThread {
-            addNote("⚠ $m")
+            addNote("تنبيه: $m")
             stopSession()
         }
     }
 
     private fun stopSession() {
         running = false
+        MediaOut.stop()
         power.running = false
         wave.active = false
         StateBus.captureLevel = 0
@@ -225,7 +245,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
                 StateBus.captureLevel = peak * 100 / 32768
                 val speaking = System.currentTimeMillis() - (player?.lastEnqueueAt ?: 0L) < 600
                 StateBus.speaking = speaking
-                if (!(halfDuplex && speaking)) live?.sendAudio(out)
+                if (!(halfDuplex && speaking) && !MediaOut.playing) live?.sendAudio(out)
             }
         }.start()
     }
@@ -242,6 +262,7 @@ class StudioActivity : Activity(), LiveClient.Listener {
     }
 
     override fun onAudio(pcm24k: ByteArray) {
+        if (MediaOut.playing) return
         voice?.audio(pcm24k)
     }
 
@@ -281,7 +302,8 @@ class StudioActivity : Activity(), LiveClient.Listener {
 
     override fun onToolCall(id: String, name: String, args: JSONObject) {
         Thread {
-            val res = Tools.exec(supa, cfg, Prefs.get(this, "host").ifBlank { "default" }, name, args)
+            val res = if (name in AudioTools.NAMES) audio.handle(name, args)
+            else Tools.exec(supa, cfg, Repo.personaId, Prefs.get(this, "host").ifBlank { "default" }, name, args)
             live?.sendToolResponse(id, name, res)
         }.start()
     }
@@ -290,10 +312,11 @@ class StudioActivity : Activity(), LiveClient.Listener {
     override fun onGoAway() {}
 
     override fun onClosed(code: Int, reason: String) {
-        if (running) fail("انقطع الاتصال ($code) ${reason.take(120)}")
+        if (running) fail("انقطع الاتصال ($code) ${reason.take(120)}${UiState.toolHint()}")
     }
 
     override fun onDestroy() {
+        MediaOut.listeners.remove(mediaListener)
         stopSession()
         super.onDestroy()
     }

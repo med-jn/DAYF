@@ -135,7 +135,8 @@ class AgentPlayer(private val ctx: Context) {
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
             )
-            .setBufferSizeInBytes(maxOf(min, rate))
+            .setBufferSizeInBytes(maxOf(min, rate / 2))
+            .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
         val am = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -174,6 +175,9 @@ class AgentPlayer(private val ctx: Context) {
                 it.type == AudioDeviceInfo.TYPE_USB_HEADSET
         }
     }
+
+    /** Number of queued blocks not yet written to the audio device. */
+    fun queued(): Int = q.size
 
     fun enqueue(b: ByteArray) {
         lastEnqueueAt = System.currentTimeMillis()

@@ -40,14 +40,18 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
         private fun score(n: String): Double {
             val m = Regex("(\\d+)(?:\\.(\\d+))?").find(n)
             val v = if (m != null) (m.groupValues[1] + "." + m.groupValues[2].ifEmpty { "0" }).toDouble() else 0.0
+            // latency first: flash/lite variants answer faster than pro ones
             return v * 10 -
                 (if (n.contains("thinking")) 50 else 0) -
                 (if (n.contains("preview")) 3 else 0) +
+                (if (n.contains("flash")) 8 else 0) +
+                (if (n.contains("lite")) 4 else 0) -
+                (if (n.contains("pro")) 20 else 0) +
                 (if (Regex("live|native-audio").containsMatchIn(n)) 1 else 0)
         }
 
-        /** Best cheap text/vision model (flash family) that supports generateContent. */
-        fun pickTextModel(apiKey: String): String? {
+        /** All Live-capable models, best first. */
+        fun listLiveModels(apiKey: String): List<String> {
             var token = ""
             val found = ArrayList<String>()
             for (page in 0 until 4) {
@@ -58,7 +62,38 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
                     rest.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
                 } catch (e: Exception) {
                     null
-                } ?: return null
+                } ?: return found
+                val j = JSONObject(body)
+                val arr = j.optJSONArray("models") ?: break
+                for (i in 0 until arr.length()) {
+                    val m = arr.getJSONObject(i)
+                    val methods = m.optJSONArray("supportedGenerationMethods") ?: continue
+                    var ok = false
+                    for (k in 0 until methods.length()) if (methods.optString(k) == "bidiGenerateContent") ok = true
+                    if (!ok) continue
+                    val name = m.optString("name").removePrefix("models/")
+                    if (Regex("translate|transcribe|tts|image|embed").containsMatchIn(name)) continue
+                    found.add(name)
+                }
+                token = j.optString("nextPageToken", "")
+                if (token.isEmpty()) break
+            }
+            return found.sortedByDescending { score(it) }
+        }
+
+        /** Flash-family text/vision models that support generateContent, best first (discovered, never hard-coded). */
+        fun rankTextModels(apiKey: String): List<String> {
+            var token = ""
+            val found = ArrayList<String>()
+            for (page in 0 until 4) {
+                var url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=100"
+                if (token.isNotEmpty()) url += "&pageToken=$token"
+                val req = Request.Builder().url(url).header("x-goog-api-key", apiKey).build()
+                val body = try {
+                    rest.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
+                } catch (e: Exception) {
+                    null
+                } ?: return found.sortedByDescending { textScore(it) }
                 val j = JSONObject(body)
                 val arr = j.optJSONArray("models") ?: break
                 for (i in 0 until arr.length()) {
@@ -75,42 +110,38 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
                 token = j.optString("nextPageToken", "")
                 if (token.isEmpty()) break
             }
-            return found.maxByOrNull { n ->
-                val m = Regex("(\\d+)(?:\\.(\\d+))?").find(n)
-                val v = if (m != null) (m.groupValues[1] + "." + m.groupValues[2].ifEmpty { "0" }).toDouble() else 0.0
-                v * 10 + (if (n.contains("flash")) 5 else 0) - (if (n.contains("lite")) 2 else 0) - (if (n.contains("preview")) 1 else 0)
-            }
+            return found.sortedByDescending { textScore(it) }
         }
 
-        /** Returns the best model supporting bidiGenerateContent, or null. */
+        private fun textScore(n: String): Double {
+            val m = Regex("(\\d+)(?:\\.(\\d+))?").find(n)
+            val v = if (m != null) (m.groupValues[1] + "." + m.groupValues[2].ifEmpty { "0" }).toDouble() else 0.0
+            return v * 10 + (if (n.contains("flash")) 5 else 0) - (if (n.contains("lite")) 2 else 0) - (if (n.contains("preview")) 1 else 0)
+        }
+
+        fun pickTextModel(apiKey: String): String? = rankTextModels(apiKey).firstOrNull()
+
+        private val TOKEN_ANGLE = Regex("<[^<>\\n]{1,24}>")
+        private val TOKEN_CURLY = Regex("\\{[A-Za-z _]{1,16}\\}")
+
+        /** The model sometimes writes control markers such as <no speech>{pause} as text; they must never reach the screen, memory or a voice engine. */
+        fun cleanTranscript(t: String): String? {
+            val c = TOKEN_ANGLE.replace(TOKEN_CURLY.replace(t, ""), "")
+            if (c == t) return t
+            return c.ifBlank { null }
+        }
+
+        /** Returns the best model supporting bidiGenerateContent, or null. Cached per process. */
+        @Volatile private var cachedModel: String? = null
         fun pickModel(apiKey: String): String? {
-            var token = ""
-            val found = ArrayList<String>()
-            for (page in 0 until 4) {
-                var url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=100"
-                if (token.isNotEmpty()) url += "&pageToken=$token"
-                val req = Request.Builder().url(url).header("x-goog-api-key", apiKey).build()
-                val body = try {
-                    rest.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
-                } catch (e: Exception) {
-                    null
-                } ?: return null
-                val j = JSONObject(body)
-                val arr = j.optJSONArray("models") ?: break
-                for (i in 0 until arr.length()) {
-                    val m = arr.getJSONObject(i)
-                    val methods = m.optJSONArray("supportedGenerationMethods") ?: continue
-                    var ok = false
-                    for (k in 0 until methods.length()) if (methods.optString(k) == "bidiGenerateContent") ok = true
-                    if (!ok) continue
-                    val name = m.optString("name").removePrefix("models/")
-                    if (Regex("translate|transcribe|tts|image|embed").containsMatchIn(name)) continue
-                    found.add(name)
-                }
-                token = j.optString("nextPageToken", "")
-                if (token.isEmpty()) break
-            }
-            return found.maxByOrNull { score(it) }
+            cachedModel?.let { return it }
+            val m = listLiveModels(apiKey).firstOrNull()
+            if (m != null) cachedModel = m
+            return m
+        }
+
+        fun forgetModel() {
+            cachedModel = null
         }
     }
 
@@ -174,8 +205,8 @@ class LiveClient(private val apiKey: String, private val l: Listener) {
                     if (d.has("data")) l.onAudio(Base64.decode(d.getString("data"), Base64.DEFAULT))
                 }
             }
-            sc.optJSONObject("inputTranscription")?.let { if (it.has("text")) l.onInputText(it.getString("text")) }
-            sc.optJSONObject("outputTranscription")?.let { if (it.has("text")) l.onOutputText(it.getString("text")) }
+            sc.optJSONObject("inputTranscription")?.let { if (it.has("text")) cleanTranscript(it.getString("text"))?.let { t -> l.onInputText(t) } }
+            sc.optJSONObject("outputTranscription")?.let { if (it.has("text")) cleanTranscript(it.getString("text"))?.let { t -> l.onOutputText(t) } }
             if (sc.optBoolean("interrupted", false)) l.onInterrupted()
             if (sc.optBoolean("turnComplete", false)) l.onTurnComplete()
         }

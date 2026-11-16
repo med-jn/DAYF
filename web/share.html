@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دعوة إلى Tik Guest</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(120% 80% at 50% 0%, #07242a, #000 60%); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; color:#fff; }
+  main { width:min(92vw,420px); text-align:center; padding:28px 22px; border:1px solid #2a2a33; border-radius:22px; background:#111116; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  p { margin:6px 0; color:#9a9aa6; font-size:14px; line-height:1.7; }
+  .code { margin:18px 0 6px; padding:14px; border-radius:14px; background:#08080b; border:1px dashed #33333d; font-size:22px; letter-spacing:3px; font-family:ui-monospace,Consolas,monospace; direction:ltr; }
+  a.btn, button { display:block; width:100%; box-sizing:border-box; margin-top:12px; padding:14px; border-radius:14px; border:0; font-size:16px; font-weight:700; text-decoration:none; cursor:pointer; }
+  a.btn { background:#fe2c55; color:#fff; }
+  button { background:transparent; color:#25f4ee; border:1px solid #2a2a33; }
+  small { display:block; margin-top:16px; color:#6b6b76; font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>دعوة إلى شخصية في Tik Guest</h1>
+  <p>افتح الدعوة من التطبيق لقبولها.</p>
+  <div class="code" id="code">—</div>
+  <a class="btn" id="open" href="#">فتح في التطبيق</a>
+  <button id="copy">نسخ الرمز</button>
+  <small>إن لم يفتح التطبيق، انسخ الرمز ثم افتح التطبيق ← الشخصية ← قبول دعوة.</small>
+</main>
+<script>
+  var code = (location.pathname.split('/').filter(Boolean).pop() || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  document.getElementById('code').textContent = code || '—';
+  var intent = 'intent://share/' + code + '#Intent;scheme=com.tikguest;package=com.tikguest;end';
+  var scheme = 'com.tikguest://share/' + code;
+  var isAndroid = /android/i.test(navigator.userAgent);
+  var openBtn = document.getElementById('open');
+  openBtn.href = isAndroid ? intent : scheme;
+  if (isAndroid && code) setTimeout(function(){ location.href = intent; }, 400);
+  document.getElementById('copy').onclick = function () {
+    if (navigator.clipboard) navigator.clipboard.writeText(code);
+    this.textContent = 'تم النسخ';
+  };
+</script>
+</body>
+</html>

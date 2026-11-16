@@ -1,0 +1,9 @@
+# Query: https://tikguest.pages.dev
+# ContextLines: 1
+
+1 result - 1 file
+
+web\README.txt:
+  3  1) Cloudflare ← Workers & Pages ← Create ← Pages ← Upload assets.
+  4: 2) اسم المشروع: tikguest  (فيصبح العنوان https://tik.orcaup.com).
+  5  3) ارفع محتوى هذا المجلد كله (web) كما هو، بما فيه المجلد المخفي .well-known والملفان _redirects و _headers.

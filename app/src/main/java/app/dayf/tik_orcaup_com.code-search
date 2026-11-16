@@ -1,0 +1,23 @@
+# Query: tikguest.pages.dev
+# ContextLines: 1
+
+4 results - 4 files
+
+gradle.properties:
+  6  # Public host of the invitation page (see web/README.txt)
+  7: shareHost=tik.orcaup.com
+
+app\build.gradle.kts:
+  37          // the public host of the invitation page (web/ folder, deployed on Cloudflare Pages); override in gradle.properties
+  38:         val shareHost = (project.findProperty("shareHost") as String?) ?: "tikguest.pages.dev"
+  39          manifestPlaceholders["shareHost"] = shareHost
+
+app\src\main\java\app\dayf\Sharing.kt:
+  20          val id = ctx.resources.getIdentifier("share_host", "string", ctx.packageName)
+  21:         return if (id != 0) ctx.getString(id) else "tikguest.pages.dev"
+  22      }
+
+web\README.txt:
+  3  1) Cloudflare ← Workers & Pages ← Create ← Pages ← Upload assets.
+  4: 2) اسم المشروع: tikguest  (فيصبح العنوان https://tikguest.pages.dev).
+  5  3) ارفع محتوى هذا المجلد كله (web) كما هو، بما فيه المجلد المخفي .well-known والملفان _redirects و _headers.
